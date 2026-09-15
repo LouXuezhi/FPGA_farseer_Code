@@ -1,0 +1,11 @@
+data/raw/
+data/synth/
+refs/
+_logs/
+*.zip
+*.bit
+*.xpr
+.Xil/
+data/processed/
+runs/**/*.pt
+*.npy

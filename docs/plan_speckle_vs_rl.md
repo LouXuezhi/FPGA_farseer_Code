@@ -1,0 +1,530 @@
+# 方案对比：RL 控制器 vs 多模光纤散斑传感（FPGA 版）
+
+> 依据：本机 `~/Desktop/WiseStars/光纤/` 调研；网络检索（链接见文末）。价格为经验估计，需淘宝核价。
+
+## 1. FPGA 什么时候"非用不可"
+
+| FPGA 优势 | 需要的场景特征 |
+|---|---|
+| 纳秒级确定性延迟 | 控制/保护周期 ≤ 1 ms |
+| 流水线并行处理传感器原始数据 | 数据率高（kHz–MHz 采样、高帧率像素流），CPU 来不及或要 GPU |
+| 直接对接传感器（ADC、CMOS、LVDS/MIPI） | 需要在数据进入主机前完成处理 |
+| 低功耗、无操作系统 | 边缘节点多、每点不能配一台 PC+GPU |
+
+判据：**高数据率的传感器前端**。控制周期 60 s 的冷却 RL 一条都不满足。
+
+## 2. RL 路线
+
+| 已有实现 | 说明 |
+|---|---|
+| 粒子加速器束流反馈，FPGA 上在线 RL，微秒级延迟 [1] | 需要 FPGA 是因为周期为微秒 |
+| QForce-RL、PPO 训练加速器等 [2][3] | 研究的是 RL 计算本身的吞吐 |
+| 电动车充电 RL 部署到 FPGA [4] | 与冷却 RL 同类，"为什么用 FPGA"的问题同样存在 |
+| 数据中心冷却 RL（Meta、多智能体方法）[5][6] | 都在 CPU/GPU 上，没看到 FPGA 版 |
+
+结论：数据中心冷却 RL 上 FPGA **没有刚需**，模型层面的创新你也已经做到 150+ 版。不建议作为主线。
+
+## 3. 散斑路线
+
+### 3.1 现状与空白
+
+| 方向 | 现状 |
+|---|---|
+| 散斑传感解调 | 相机 + PC/GPU 跑 CNN（你调研里的 [1][5][6]）；每个探头配一台相机 + GPU，是规模化的主要障碍 |
+| 高带宽散斑 | 高速相机达 40 kHz [7]；事件相机达 20 kHz、亚毫秒延迟，但仍在 PC 上用 PyTorch 处理 [8] |
+| 低成本散斑 | 树莓派 + 相机、一台激光器带 7 根 MMF 的床垫传感 [9][10] |
+| FPGA 光纤传感 | FBG、干涉仪、φ-OTDR 解调已有 FPGA 实现 [11][12] |
+| **FPGA 散斑解调** | **未检索到** |
+| FPGA 上的散斑图像处理 | X 射线 SpeckleNN，比 GPU 快 8.9 倍、功耗低 7.8 倍 [13]；Zynq-7000 高速相机在 256×256 分辨率下达 2329 fps [14] |
+
+**可切入的空白**：把"相机 + GPU"的散斑解调改成 **FPGA 直接吃传感器数据流，流式实时解调**，面向液冷管道的振动/泄漏/堵塞监测。每一点都能对上 §1 的判据，也和 WiseStars 液冷光纤监测课题、PHM 论文的"确定性保护层"衔接。
+
+### 3.2 两种硬件实现
+
+| | A. 光电二极管阵列（推荐起步） | B. 全局快门 CMOS 相机 |
+|---|---|---|
+| 原理 | 4–16 个光电二极管对准不同散斑颗粒，多路 ADC 同步采样 | FPGA 读取小 ROI（如 64×64 至 256×256），每帧算 ZNCC 或学习到的模式投影 |
+| 数据率 | 16 路 × 50–200 kSps | 1–2 kHz 帧率 × 数千像素 |
+| FPGA 工作 | 多路同步采样、FIR/FFT、互相关、小网络分类、ms 级报警联锁 | 像素流水线、ZNCC 或 CNN 加速、AXI-Stream、DMA |
+| 板卡 | PYNQ-Z2 即可（Arduino/Pmod 接 ADC） | 需要 MIPI 接口：KV260/KR260（初级组允许 US+）；PYNQ-Z2 只能接 DVP 低速相机 |
+| 难度 | 中 | 高（MIPI 与光学对准） |
+| 风险 | 通道少，信息量有限 | 光路搭建、帧率达不到 |
+
+### 3.3 物料与成本（估计）
+
+| 物料 | 选型 | 估价 |
+|---|---|---|
+| 激光源 | 650 nm 或 532 nm 激光模组 / 带尾纤的 650 nm 激光器 | ¥30–200 / ¥300–800 |
+| 多模光纤 | 塑料光纤 POF（1 mm 芯，耦合最容易）或 62.5/105 µm 石英跳线 | ¥20–150 |
+| 探测 | 光电二极管若干 + 跨阻放大 + AD7606 类 8 通道 ADC 模块 | ¥100–200 |
+| 相机（仅方案 B） | OV7251 全局快门 MIPI 模组 | ¥200–400 |
+| 管道台架 | 小水泵、PVC/硅胶管、夹子（模拟堵塞）、针孔阀（模拟泄漏）、光学面包板 | ¥200–400 |
+| 板卡 | PYNQ-Z2 借用/自购；KV260 约 ¥2000 | — |
+| **合计（方案 A）** | | **约 ¥600–1500** |
+
+**激光不贵**。不需要 GCI 那类科研光源，普通半导体激光器配 1–5 m 光纤就能出散斑：1 m 阶跃多模光纤的模间光程差约 cm 量级（L·NA²/2n），廉价激光二极管的相干长度基本够用。真正的难点是**耦合稳定性**和**温度漂移引起的散斑变化**。
+
+### 3.4 系统框图（方案 A）
+
+```
+激光 → 多模光纤（缠绕在管道上）→ 出射散斑 → PD 阵列 → ADC
+                                                     │ 200 kSps × N
+PL: 同步采样 → 带通/FFT → 模式投影/互相关 → 定点小网络分类（正常/泄漏/堵塞/泵异常）
+    → 事件触发硬件报警（ms 级）+ 特征上传
+PS: Python/PYNQ 标定、训练数据采集、可视化；可选把事件发给冷却控制器
+```
+
+### 3.5 可量化指标
+
+- 带宽（Hz）、噪声底、端到端报警延迟 P99
+- 分类准确率 / F1（泄漏、堵塞、泵空化、敲击）
+- 对照组：PC + 相机 + CPU/GPU 的延迟与功耗，对比 FPGA 板（W）
+- 资源占用、时序 WNS
+- 温度漂移下的鲁棒性（加热管段，看误报率）
+
+### 3.6 创新点
+
+1. 首个 FPGA 流式散斑解调（按检索结果），去掉相机 + GPU
+2. 多点同时扰动的硬件分离：[8] 中基于 PyTorch 的模式分离做成定点流水线
+3. 面向液冷 PHM 的毫秒级确定性保护层，与上层 RL/LLM 分权（接 PHM 论文的架构）
+
+## 4. 工作量与规划（方案 A 起步，B 作为扩展）
+
+| 周 | 内容 |
+|---|---|
+| 1 | 买料；PC + USB 相机先验证散斑随敲击/水流变化（纯软件，确认物理可行） |
+| 2 | PD 阵列 + ADC 接入 PYNQ-Z2，PS 端采集原始数据 |
+| 3–4 | 台架：泵、管、泄漏/堵塞工况；采集数据集，PC 上训练特征与分类器 |
+| 5–6 | PL：同步采样、滤波/FFT、互相关、定点分类器（HLS）；和 PC 金标准逐样本比对 |
+| 7 | 硬件报警联锁、延迟/功耗/准确率测试、CPU/GPU 对照 |
+| 8–9 | Skill 包（通用 PYNQ 高速 ADC 采集 + 黄金比对脚本）、报告、开源 |
+| 扩展 | 方案 B：KV260 + OV7251 相机 ROI 流水线 |
+
+合计约 10–12 人周。第 1 周是生死线：散斑对管道振动的响应不明显，就及时止损。
+
+## 5. 结论
+
+| | RL 冷却控制器 | 散斑 + FPGA |
+|---|---|---|
+| 非 FPGA 不可 | ✗ | ✓ 高数据率传感器前端 |
+| 创新空间 | 小（模型已做透，硬件无刚需） | 大（FPGA 散斑解调未检索到先例） |
+| 硬件含量 | 低 | 高（ADC/相机接口、DSP 流水线、联锁） |
+| 成本 | 仅板卡 | 约 ¥1000 |
+| 风险 | 低 | 光学稳定性、第 1 周验证 |
+| 与已有积累 | PHM 论文 | WiseStars 光纤调研 + PHM 分层架构 |
+
+**推荐散斑 + FPGA，走方案 A 起步。** RL 工作可作为系统上层的引用和故事衔接，不作为硬件主体。
+
+## 6. 标定、训练、泛化与开源资源
+
+### 6.1 公开数据集与代码
+
+| 资源 | 内容 | 可用性 | 对本项目的用处 |
+|---|---|---|---|
+| 合成散斑数据集 [16]（OSF `zfmp5`） | COMSOL 仿真，0–120 °C，601 张（增强后 13.8 万张），126×126 | CC BY 4.0，含 MATLAB/Python notebook 与 COMSOL 文件 | 硬件未到货前调通 PC 训练 → 量化 → FPGA 的全流程 |
+| 实验热散斑数据集 [17]（MDPI *Data* 2025） | 633 nm He-Ne、62.5 µm MMF，25–200 °C，24,528 张 | 论文声明公开，下载链接需进论文页确认 | 同上，真实噪声 |
+| 扭转散斑数据集 | 0–180°，7,110 张 | 公开 | 参考 |
+| 管道泄漏散斑 [18] | 532 nm、100 fps 相机、SVM/KNN | **数据仅"应要求提供"** | 方法参考 |
+| 床垫散斑 [19] | 10 m MMF、ZNCC 自动打标签、2.1M 参数 CNN | 数据/代码不公开 | 自动打标签思路 |
+| **预训练模型** | — | **未找到** | 模型本身简单（浅层 CNN / MobileNet / SVM），自己训练即可 |
+
+**没有振动/泄漏类公开数据，主数据集必须在自己的台架上采集。**
+
+### 6.2 泛化能力
+
+- **绝对量回归（如温度）泛化差**：Photonics 2026 [20] 单数据集训练、在未见过的实验上测试，MAE 为 13.39 °C；用 13 个数据集训练才降到 0.69 °C。换光纤、弯曲或耦合，映射就被打乱。
+- **泄漏研究的实际水平** [18]：检测准确率 >85%，泄漏尺寸分类只有 75.8%；每个压力单独建模；水温在 7–34 °C 变化时信号下降 25%，需要重标定。
+- **动态事件检测更稳**：振动/冲击看的是毫秒级的相对变化，慢漂移可以用滑动参考帧或高通滤波去掉。
+
+→ **题目限定为"动态事件检测与分类"**（泄漏、堵塞、泵异常、敲击），**不做绝对温度**。
+
+### 6.3 需要标定吗？
+
+需要，但可以自动化：
+
+1. 用已知激励自动生成标签：压电蜂鸣器扫频、电磁阀开关、夹管模拟堵塞，由 PS 端脚本同步记录
+2. 用 ZNCC 去相关度自动切分事件段（沿用 [19] 的思路）
+3. 上电自检：采集一段静默基线、更新参考帧；漂移超过阈值就提示重新采集基线（FPGA 实现）
+4. 报告中如实给出跨天/跨水温测试结果，这一项本身就是评测点
+
+### 6.4 训练与部署流程
+
+```
+台架采集 → PC 训练（特征 + 小模型）→ Brevitas 量化感知训练 → FINN / hls4ml 生成 IP → Vivado 集成 → PYNQ 调用
+```
+
+| 工具 | 适用 | 备注 |
+|---|---|---|
+| FINN（AMD 官方开源） | 量化 CNN/MLP → 流式数据流 IP | 官方支持 PYNQ-Z2，最契合初级组推荐的 PYNQ |
+| hls4ml | 小 MLP/1D-CNN → HLS | 延迟极低，适合 PD 阵列时序信号 |
+| Vitis AI DPU | 较大 CNN | 官方主要支持 KV260 等 US+，PYNQ-Z2 不推荐 |
+
+**模型架构不是重点**：物理特征（去相关速率、各通道频谱）放在 PL 里定点计算，网络只做最后的小分类器。这样模型小、更好解释，泛化也比端到端 CNN 好。
+
+### 6.5 可行性判断
+
+| 问题 | 判断 |
+|---|---|
+| 没有实操经验能不能做 | 能。光路很简单（激光 → 光纤 → 探测器），不需要干涉仪级对准；第 1 周用 USB 相机就能看到散斑 |
+| 能直接用现成模型吗 | 不能，但模型本身简单；公开数据集用来提前打通 FPGA 流程 |
+| 泛化 | 限定"同一台架、动态事件"时可行；跨装置的泛化不作承诺，只作为分析项 |
+| 最大风险 | 耦合不稳、环境振动误报 → 光纤两端固定在面包板上；设置"静默基线"对照组 |
+
+## 7. 台架：怎么模拟振动、泄漏、堵塞
+
+### 7.1 闭环水路（桌面级）
+
+```
+水桶(储水) → 12V 隔膜泵(PWM) → 压力表/压力传感器 → 透明管 1–2 m
+     ▲                                                │
+     │        [光纤螺旋缠绕段 ~50 cm] ← 激振器/加速度计贴在旁边
+     │                                                │
+     └── 堵塞阀(舵机拧球阀) ← 泄漏三通(电磁阀+针阀→排回水桶) ←┘
+```
+
+电子部分放在水路上方的独立托板上，下面垫接水盘。
+
+### 7.2 各工况怎么造
+
+| 工况 | 做法 | 可控量（标签） | 自动化 |
+|---|---|---|---|
+| 泄漏 | 三通旁路接**针阀 + 电磁阀**排回水桶；另备 1/2/3 mm 钻孔 + 螺丝堵头 | 开度 / 孔径、压力 | PYNQ GPIO 驱动 MOSFET 开关电磁阀 |
+| 堵塞 | 下游球阀由舵机分档关闭（0/30/60/80 %）；或管内塞孔板 | 关闭比例 | 舵机 PWM |
+| 泵异常 | ① PWM 改转速；② 吸入端节流造成气蚀；③ 吸入端小阀进气产生气泡 | 转速、进气开关 | PWM + 电磁阀 |
+| 外部振动/敲击 | **贴片式激振器（小功率骨传导喇叭）**贴在管上，播放已知正弦扫频、脉冲或录制的泄漏噪声 | 频率、幅度、时刻 | PS 或 PC 音频输出，**同时给出真值波形和延迟测量起点** |
+| 干扰（负样本） | 桌面敲击、走动、风扇、用热水/吹风机改变管温 | — | 用于测误报率 |
+
+**早期验证可以不通水**：空管 + 激振器播放公开泄漏录音，第 1 周就能测带宽和响应。
+
+### 7.3 真值参考传感器（与散斑同步采集）
+
+| 传感器 | 用途 | 估价 |
+|---|---|---|
+| 压电接触麦克风 / ADXL345 加速度计 | 振动真值，也作为"传统方案"对照 | ¥5–30 |
+| 霍尔流量计 YF-S201 | 泄漏/堵塞造成的流量变化 | ¥10–20 |
+| 压力传感器 0–1.2 MPa | 压力标签 | ¥30–50 |
+
+### 7.4 自动采集
+
+PS 端脚本按随机时间表切换工况（阀、舵机、PWM、激振），记录时间戳，自动生成标签。每小时可采几百个事件。数据集按"日期 × 水温 × 压力"分组，测试集留出整天的数据，用来测泛化。
+
+### 7.5 物料（估计）
+
+| 物料 | 估价 |
+|---|---|
+| 12V 隔膜泵（0.3–0.7 MPa，泄漏声才明显） | ¥50–100 |
+| 透明管/PVC 管、三通、球阀、针阀、接头、水桶 | ¥80–150 |
+| 12V 电磁阀 ×2、舵机、MOSFET 模块、12V 电源 | ¥60–100 |
+| 贴片激振器 + 功放模块 | ¥30–60 |
+| 参考传感器 | ¥50–100 |
+| 光学面包板/固定件、接水盘 | ¥50–150 |
+| **合计** | **约 ¥350–650**（另加 §3.3 光路约 ¥300–800） |
+
+### 7.6 管径
+
+| 段 | 规格 | 理由 |
+|---|---|---|
+| 主测试段（缠光纤） | **DN25：外径 32 mm 的 PVC-U/PPR 管，或内径 25 mm 透明 PVC 软管** | 对应液冷 CDU/机柜歧管的支路（DN20–DN50）；泄漏散斑论文用的也是 1″ 管 [18]；光纤弯曲半径 ≥15 mm，不容易断 |
+| 其余连接 | 内径 10–13 mm（3/8″–1/2″）软管 | 匹配 12V 泵接口，省钱 |
+| 可选冷板支路 | 内径 10 mm 软管，光纤**直线贴附**，不缠绕 | 模拟冷板软管；管径太细，缠绕会让弯曲半径过小 |
+
+弯曲半径估算：螺旋缠绕时曲率半径 = (r² + (p/2π)²)/r。外径 32 mm、螺距 30 mm → 约 17 mm；外径 20 mm → 约 11 mm（石英光纤长期偏险，POF 更不行）。
+**不建议小于外径 25 mm；大于 DN50 需要的泵流量和光纤长度都会增加。**
+
+注：隔膜泵本身有几十 Hz 的脉动，既是干扰也是"泵正常特征"；需要安静基线时换直流离心泵对照。
+
+### 7.7 注意
+
+- 鱼缸泵压力只有约 0.1 bar，泄漏噪声太弱，要用隔膜泵
+- 光纤两端和耦合处必须刚性固定，否则管道振动会直接晃动耦合端，测到的就不是管壁上的信号（对照：不缠管、只固定光纤，确认信号来源）
+- 水电分离，12V 供电，电磁阀要加续流二极管
+
+## 8. 调整后的路线：先用温度打通，再做振动
+
+### 8.1 分阶段
+
+| 阶段 | 内容 | 硬件 | 产出 | 后续复用 |
+|---|---|---|---|---|
+| **T1 纯数据** 1–2 周 | 公开数据集 [16][17] → 缩到 32×32/64×64 → 小 CNN → Brevitas 量化 → FINN → PYNQ-Z2 推理 | 只要 PYNQ-Z2 | 精度、延迟、功耗；对照 ARM 和 PC 结果 | 工具链、Overlay、PYNQ Skill |
+| **T2 自建测温** 2 周 | 激光 + MMF + USB 相机 + 半导体制冷片控温台，自采数据；相机帧 → PYNQ → PL 推理 → 显示温度 | 光路 + 控温台约 ¥400–900 | **保底作品**：完整闭环 + 自有数据集 + 跨天泛化测试 | 光路、标定脚本 |
+| **V1 振动（干管）** 2 周 | 空管 + 激振器；光电二极管/XADC 直接进 PL 高速采样 | +激振器、光电二极管约 ¥100 | 带宽、延迟 P99；这里体现"非 FPGA 不可" | — |
+| **V2 水路**（可选） | §7 台架 | +约 ¥500 | 泄漏/堵塞分类 | — |
+
+**需要清楚**：温度变化慢，T1/T2 本身体现不出 FPGA 的必要性，只是打通流程和保底。创新点仍在 V1。T1 训练的图像 CNN 不能直接用于 V1 的时序信号，能复用的是工具链和光路。
+
+### 8.2 T2 控温台
+
+- 半导体制冷片 TEC1-12706 + 铝块 + 散热器，光纤 2–5 cm 段用导热胶贴在铝块上
+- 参考温度：K 型热电偶 + MAX6675（SPI），或 DS18B20
+- MOSFET + PWM 控温，PYNQ 端 Python PID 自动扫温（如 25→60 °C 往返），同步记录"图像-温度"对，每小时可采数千张
+- 物料约 ¥100–150
+
+### 8.3 驱动要写多少
+
+| 设备 | 接法 | 要自己写吗 |
+|---|---|---|
+| 自定义 IP（CNN、滤波、相关） | HLS/FINN 自动生成 AXI 寄存器表 | 不写驱动，PYNQ `overlay.ip.register_map` / MMIO 直接读写 |
+| 大块数据 | AXI DMA | PYNQ 自带 DMA 驱动，Python 调用 |
+| USB 相机（T2） | 板上 Linux V4L2 + OpenCV | 不用写；帧经 PS 送 PL，30 fps 足够测温 |
+| 光电二极管采样（V1） | **Zynq 片上 XADC**（PYNQ-Z2 Arduino 模拟口） | 不用外置 ADC 驱动；需在 PL 做采样控制（这部分算硬件工作量） |
+| 外置高速 ADC（如 AD7606，V1 升级） | SPI/并口 | **需要自己写 RTL 接口**，约 3–5 天，也是得分点 |
+| 电磁阀、舵机、TEC、泵 | AXI GPIO / PWM | 基本不用写，PYNQ 自带 |
+| 热电偶、加速度计 | PS 端 SPI/I2C，Python 库 | 不用写 |
+| MIPI 相机直连 PL | KV260 官方 Kria 应用有驱动 | 可用但复杂，仅作远期扩展 |
+
+结论：**T1/T2 基本不写驱动**。V1 如果用 XADC，工作量也可控。
+
+## 9. 板卡选型
+
+| | **PYNQ-Z2（推荐主力）** | KV260（远期扩展） |
+|---|---|---|
+| 器件 | Zynq-7000 XC7Z020：53k LUT、220 DSP、512 MB DDR | Zynq US+ K26：约 256k LUT、约 1.2k DSP、4 GB |
+| 价格 | AMD 大学计划价 US$129 / TUL US$119 [21][22]（国内零售需核价） | 约 US$249–299 |
+| 初级组允许 | ✓（指南推荐 PYNQ） | ✓（US+） |
+| 官方借用 | 报名后开放远程板 | 报名后开放远程板 |
+| FINN | 编译器支持；finn-examples 预编译比特流只提供 Z1，Z2 要改 `platforms_to_build` 自行编译 [23][24] | 支持（Kria-PYNQ） |
+| 模拟输入 | **板载 XADC，6 路 0–3.3 V 单端（Arduino 口）** | 无现成模拟口，需要 Pmod ADC |
+| 相机 | USB（经 PS） | MIPI 直连 PL + ISP |
+| 扩展 | Arduino、树莓派排针、2×Pmod、HDMI 输入/输出、千兆网 | 1×Pmod、树莓派排针、USB3、千兆网 |
+| 适合阶段 | T1、T2、V1 全部 | 只在需要"相机直连 PL 高帧率"时 |
+
+**决定：买 2 块 PYNQ-Z2**（一块接台架，一块开发/备份），不买 KV260。
+远程板只用于 T1 阶段并行调试，接传感器必须用实体板。
+
+需要时再补：Pmod AD1（2 通道 12 位 1 Msps）或 AD7606 模块，用于 V1 升级；12V 电源；32 GB 以上 microSD。
+
+## 10. PYNQ-Z2 接高帧率相机
+
+PYNQ-Z2 **没有 MIPI 接口，也没有 FMC/LVDS 差分高速接口**，面阵高帧率相机接不好。
+
+| 接法 | 帧率 | 进 PL？ | 评价 |
+|---|---|---|---|
+| USB2 UVC 相机 | 30–120 fps（部分 260 fps 型号为 MJPEG，A9 解码慢） | 否，经 PS/Linux，延迟有抖动 | T2 测温够用，振动不够 |
+| DVP 并口传感器（OV7725 等）接排针 | QVGA 约 120 fps，卷帘快门 | 是 | 帧率仍然低 |
+| MIPI/LVDS 全局快门（OV7251、PYTHON300） | 数百 fps | 需差分对，Z2 不具备 | ✗ |
+| **线阵传感器 TSL1401（128 像素）** | **kHz 级行频** | **是，PL 产生 SI/CLK 时序，XADC 采样** | **✓ 推荐** |
+| 光电二极管阵列 + XADC | 每通道数 kHz–数十 kHz | 是 | ✓ 最简单 |
+
+**要点：对振动传感，面阵相机帧率是个陷阱。** 1000 fps 也只有 500 Hz 带宽，还要搬大量像素。散斑传感需要的是"少量像素 × 高采样率"。
+
+### TSL1401 线阵方案
+
+- 128×1 光电二极管阵列，只需 SI + CLK 两根时序线，时钟最高 8 MHz，模拟输出 [25]；智能车比赛常用，模块几十元
+- 瓶颈在 ADC：用片上 XADC（1 Msps 总吞吐）约 **7 kHz 行频**；换 AD9226 类并行 ADC 模块可到数十 kHz
+- PL 工作：时序发生器 + 曝光控制 + 采样同步 + 逐行 ZNCC/频谱，**这正好是初级组看重的时序与接口设计**
+- 散斑颗粒尺寸约 λz/D，要和像素间距 63.5 µm 匹配：650 nm、62.5 µm 芯径、光纤端面距传感器约 10 mm 时约 0.1 mm，合适
+- 激光亮度足够，短曝光没问题
+
+### 路线对应
+
+| 阶段 | 传感器 |
+|---|---|
+| T1 | 公开数据集 |
+| T2 测温 | USB 相机（二维图，便于观察和建数据集） |
+| V1 振动 | **TSL1401 线阵 + XADC**，光电二极管阵列作为对照 |
+| 若坚持用面阵高帧率 | 换 Zybo Z7-20（同为 XC7Z020，带 MIPI，Pcam 5C 可达 VGA 90 fps）[26] 或 KV260 + OV7251；仍达不到 kHz，不推荐 |
+
+## 11. 仿真输入先行：数据回放 → 合成动态散斑 → 实物
+
+### 11.1 线阵数据长什么样
+
+- 每一行是 128 个 12 位数值，即散斑的一条"切线"
+- 连续采集得到 128 × T 的时空矩阵（瀑布图）：纵轴像素，横轴时间，可以当图片看
+- 模型输入：滑动窗口，如 128×256（7 kHz 下约 36 ms），或每个像素的时序频谱特征
+- 换传感器就要重新标定，这对任何实物传感器都一样；**仿真阶段可以从公开二维散斑图中抽一行、重采样到 128 点，模拟线阵输出**
+
+### 11.2 三级数据源，一套硬件接口
+
+```
+            ┌─ S0 PC 回放（千兆网 → PS → DMA）
+AXI-Stream ─┼─ S1 DDR 预载回放（PL 按真实时序吐数据，模拟 TSL1401/XADC）
+  选择器     └─ S2 真实传感器（TSL1401 时序 + XADC）
+                    ↓
+             PL 处理：去参考帧 / ZNCC / 频谱 / 定点分类器 → 报警 + 结果
+```
+
+接口先按线阵格式（128 点/行 + 时间戳）定死，**后面只换数据源，处理链不动**。
+
+| 级 | 数据 | 标签 | 用途 |
+|---|---|---|---|
+| **D0 公开温度散斑** [16][17] | 二维图抽行 → 128 点 | 温度 | 打通 回放 → PL → 输出 全流程 |
+| **D1 合成动态散斑** | pyMMF [27] 计算 MMF 模式 → 各模式相位加扰动 δφ(t) → 输出强度取一行 | 由扰动决定 | 振动/泄漏/堵塞算法与硬件开发 |
+| **D2 实物台架** | §7 | 自动打标签 | 最终实测，比赛"板上实测输出" |
+
+### 11.3 D1 扰动怎么来
+
+| 工况 | 扰动 δφ(t) 来源 |
+|---|---|
+| 泄漏（孔口/纵向裂缝/环向裂缝/垫片）与无泄漏 | **Mendeley 公开管道泄漏数据集** [28]：PVC 管网，加速度计 51.2 kHz、每段 30 s、280 组，含交通/电动工具背景噪声，CC BY |
+| 泵正常/异常 | 合成：基频 + 谐波，异常时加宽带噪声（气蚀）或调制 |
+| 堵塞 | 合成：泵谐波频移、流噪幅值下降（**无公开数据，可信度最低**） |
+| 敲击/外部干扰 | 冲激响应、随机敲击 |
+| 温度漂移 | 慢速线性相位漂移（可参考 D0） |
+| 噪声 | 散粒噪声、ADC 量化、激光相位噪声 |
+
+**局限**：加速度到光纤相位的耦合系数是假设的，D1 只能证明算法与硬件链路有效，不代表实物精度，量级要靠 D2 标定。
+
+### 11.4 能否捕捉高频振动
+
+| 链路 | 采样率 | 可用带宽 |
+|---|---|---|
+| 仿真回放 S0/S1 | 自定（128 点×12 位×10 kHz ≈ 15 Mbps，千兆网够；更高就走 DDR 预载） | 由数据决定（泄漏数据 51.2 kHz） |
+| TSL1401 + XADC | 约 7 kHz 行频 | 约 3 kHz |
+| 光电二极管 4 路 + XADC | 每路约 250 kSps | 约 100 kHz（受跨阻放大带宽限制） |
+| 光纤散斑本身 | — | 文献 20–40 kHz [7][8] |
+
+| 目标信号 | 频段 | 线阵够不够 |
+|---|---|---|
+| 塑料管泄漏 | 主要 200–800 Hz，阀门型泄漏峰值 500–900 Hz [29] | ✓ |
+| 泵转频/谐波 | 数十至数百 Hz | ✓ |
+| 气蚀、金属管泄漏 | kHz 以上 | 需光电二极管通道 |
+
+## 12. pyMMF + Mendeley 泄漏数据：合成动态散斑数据集（D1）具体做法
+
+### 12.1 物理链路
+
+```
+Mendeley 动态压力 p(t)（51.2 kHz）
+  → 管壁环向应变 ε(t) = p·r / (E·t_w)          ← 薄壁管公式，用我们台架的管参数
+  → 各模式相位 φ_m(t) = φ_m0 + β_m·ξ·L_s·ε(t)  ← ξ = 1 − p_e ≈ 0.78，L_s = 缠绕光纤长度
+  → 出射场 E(x,t) = Σ c_m ψ_m(x) e^{iφ_m(t)}    ← pyMMF 给出 ψ_m、β_m；c_m 为固定随机耦合
+  → 强度 I = |E|² → 取一行 128 像素 → 加噪声、12 位量化
+  → 线阵时空数据 (T × 128) + 标签
+```
+
+用**动态压力通道**而不用加速度，因为压力 → 环向应变有明确公式，不需要猜耦合系数。
+
+### 12.2 量级估算（验证可测性）
+
+DN25 PVC：r = 16 mm、t_w = 2 mm、E ≈ 3 GPa → ε/p ≈ 2.7×10⁻⁹ /Pa。
+设泄漏压力脉动 10–100 Pa → ε ≈ 10⁻⁸–10⁻⁷；缠绕 20 圈（L_s ≈ 2 m）、650 nm：
+
+- 共模相位 ≈ k·n·ξ·L_s·ε ≈ 0.2–2 rad
+- 散斑只对**模间差分相位**敏感，约为共模的 NA²/(2n²) ≈ 1% → 0.002–0.02 rad
+
+→ 单像素强度变化只有百分之几，需要多像素相关 / 投影来提取。**这是 FPGA 流水线要做的事，也是一个待验证的风险点**，所以耦合增益 K 要作为扫描参数（×0.1–×100）。
+
+### 12.3 步骤
+
+| 步 | 内容 | 注意 |
+|---|---|---|
+| 1 | pyMMF 求模式：阶跃折射率，`initStepIndex` + `SI` 求解器，取 `modes.profiles`、`modes.betas` | 为了速度，模式数控制在 100–300（如芯径 25 µm、NA 0.1）；统计特性足够 |
+| 2 | 预计算传感器平面上的模式场：远场用 FFT，只取中心一行，积分到 128 像素 → 矩阵 Ψ (128 × M) | 调整距离使散斑颗粒约 2–3 像素 |
+| 3 | 固定随机耦合 c ∈ ℂᴹ（复高斯）和初始相位 | 不同 seed = 不同"装置"，可用于测跨装置泛化 |
+| 4 | 读 Mendeley CSV：动态压力 P1/P2；文件名解析标签 LC/CC/GL/OL/NL、流量、有无噪声、LO/BR 管网 | 30 s × 51.2 kHz |
+| 5 | 预处理：高通 50 Hz；线阵版本抗混叠后降采样到 7 kHz；光电二极管版本保留高采样率 | — |
+| 6 | 叠加合成项：泵谐波、敲击冲激、温度慢漂移 φ_drift(t) | 标签同步生成 |
+| 7 | 批量计算 I(t) = \|Ψ · (c ⊙ e^{iφ(t)})\|² | 30 s × 7 kHz × 128 × 300 ≈ 8×10⁹ 次运算，numpy/torch 分块几分钟 |
+| 8 | 噪声：散粒（泊松）、读出噪声、激光强度噪声、12 位量化 | 按 TSL1401 满阱和 XADC 位数设定 |
+| 9 | 切窗（如 0.5 s）存为 `.npy` + `labels.csv`；同时导出 AXI 帧格式二进制，供 S0/S1 回放 | — |
+
+### 12.4 数据划分（避免虚高）
+
+- **按原始 30 s 记录划分**，不按窗口划分（同一记录的窗口不能同时出现在训练集和测试集）
+- 泛化测试：LO 管网训练 → BR 管网测试；有噪声/无噪声交叉；换耦合 seed（模拟换装置）
+
+### 12.5 对照实验
+
+| 对照 | 目的 |
+|---|---|
+| 直接用原始压力/加速度信号分类 | 上限：信息本身可分到什么程度 |
+| 合成散斑 + ZNCC 阈值 | 传统解调基线 |
+| 合成散斑 + PL 特征 + 小分类器 | 本项目方法 |
+| 耦合增益 K 扫描 | 找出检测阈值，指导实物缠绕圈数 |
+
+### 12.6 代码骨架（API 以 pyMMF 文档为准）
+
+```python
+import numpy as np, pyMMF, pandas as pd
+from scipy.signal import butter, sosfiltfilt, resample_poly
+
+# 1 模式
+prof = pyMMF.IndexProfile(npoints=256, areaSize=60e-6)
+prof.initStepIndex(n1=1.46, a=12.5e-6, NA=0.10)
+sol = pyMMF.propagationModeSolver(); sol.setIndexProfile(prof); sol.setWL(650e-9)
+modes = sol.solve(solver="SI")
+beta = np.asarray(modes.betas)                               # (M,)
+P = np.stack([m.reshape(256, 256) for m in modes.profiles])  # (M,256,256)
+
+# 2 远场取一行 → 128 像素
+far = np.fft.fftshift(np.fft.fft2(P), axes=(1, 2))[:, 128, :]   # (M,256)
+Psi = far.reshape(len(beta), 128, 2).mean(-1).T                  # (128,M)
+
+# 3 固定耦合
+rng = np.random.default_rng(0)
+c = (rng.normal(size=beta.size) + 1j * rng.normal(size=beta.size)) / np.sqrt(2)
+
+# 4-5 压力 → 应变
+p = pd.read_csv("LO_OL_0.18_N.csv")["P1"].to_numpy()            # 列名以实际文件为准
+p = sosfiltfilt(butter(4, 50, "hp", fs=51200, output="sos"), p)
+p = resample_poly(p, 7, 51)                                       # ≈ 7 kHz
+eps = p * 0.016 / (3e9 * 0.002)
+
+# 7 强度
+K, Ls, xi = 1.0, 2.0, 0.78
+dphi = K * xi * Ls * np.outer(eps, beta - beta.mean())            # (T,M) 只保留差分相位
+I = np.abs((c * np.exp(1j * dphi)) @ Psi.T) ** 2                  # (T,128)
+
+# 8 噪声 + 量化
+I = I / I.mean() * 2000
+I = np.clip(rng.poisson(I) + rng.normal(0, 5, I.shape), 0, 4095).astype(np.uint16)
+```
+
+### 12.7 光纤到底测什么：应变，振动也是通过应变测到的
+
+光纤散斑不直接测压力或加速度，只对**光纤长度/弯曲的变化**敏感。管道到光纤有两条路：
+
+| 路径 | 物理 | 从数据集怎么换算 | 可信度 |
+|---|---|---|---|
+| ① 管内压力脉动 → 管壁"呼吸"膨胀 | 环向应变 ε = p·r/(E·t_w) | 动态压力 P1/P2 | 高（公式明确，低频轴对称时成立） |
+| ② 管壁振动（弯曲波）→ 表面轴向应变 | ε ≈ r·k_b²·w，w = a/ω²（k_b 为弯曲波数） | 加速度 A1/A2 → 带通 → 除以 ω² → 乘增益 K | 中（k_b 依赖管道参数，用 K 扫描代替） |
+| ③ 光纤自身晃动/微弯（引线、耦合端） | 模式耦合变化 | 用随机模式耦合矩阵 exp(iε(t)H) 近似 | 低，**实物中主要是干扰源**，要固定 |
+
+合成时取 ε(t) = K_p·ε_p(t) + K_a·ε_a(t)，两个增益分别扫描。
+
+**振动能识别**，而且散斑本质上就是动态应变/振动传感器（文献带宽 20–40 kHz、噪声底 pε 级）[7][15]。泄漏噪声本身就是管壁振动 + 流体压力脉动。
+
+| 能做 | 做不到 / 要注意 |
+|---|---|
+| 振动的有无、频谱、幅度相对变化 | 静压、慢变化与温度漂移无法区分（高通滤掉） |
+| 按频谱/时域特征分类：泄漏、泵、敲击、交通/电动工具噪声（数据集有背景噪声工况，可直接测误报） | 缠绕段是积分测量，单根光纤**不能定位** |
+| 振动事件的毫秒级报警 | 绝对加速度 / 压力值需要实物标定 |
+
+### 12.8 工作量
+
+约 1.5–2 人周：pyMMF 调通 0.5、数据解析与合成 0.5、划分/对照/增益扫描 0.5–1。
+完成后 D1 就是 PL 处理链的"黄金参考"：PC 端 numpy 结果与板上输出逐样本比对。
+
+## 参考链接
+
+1. [Microsecond-latency feedback at a particle accelerator by online RL on hardware](https://arxiv.org/pdf/2409.16177)
+2. [QForce-RL: Quantized FPGA-optimized RL compute engine](https://arxiv.org/html/2506.07046)
+3. [FPGA acceleration of deep RL using on-chip replay management](https://dl.acm.org/doi/10.1145/3528416.3530227)
+4. [Smart EV charging management using RL on FPGA](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12031526/)
+5. [Meta: Simulator-based RL for data center cooling](https://engineering.fb.com/2024/09/10/data-center-engineering/simulator-based-reinforcement-learning-for-data-center-cooling-optimization/)
+6. [MARL cooling control in hybrid cooling data centers](https://www.sciencedirect.com/science/article/abs/pii/S2352710225010484)
+7. [Multimodal speckle-polarization fiber sensing, >40 kHz](https://arxiv.org/pdf/2509.22079)
+8. [Event-based speckle interrogation for high-bandwidth multi-point sensing](https://arxiv.org/html/2509.22094)
+9. [Low-cost Raspberry Pi imaging system for fiber specklegram sensors](https://www.researchgate.net/publication/381774143_A_low-cost_Raspberry_Pi_based_imaging_system_for_analysis_of_fiber_specklegram_sensors)
+10. [MMF specklegram smart bed sensor array](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9231555/)
+11. [FPGA-based high-speed optical fiber sensor, multitone mixing](https://www.researchgate.net/publication/359810502_FPGA-Based_High-Speed_Optical_Fiber_Sensor_Based_on_Multitone-Mixing_Interferometry)
+12. [FPGA real-time processing of distributed optical fiber sensing signals](https://link.springer.com/chapter/10.1007/978-981-95-1340-6_26)
+13. [FPGA-accelerated SpeckleNN for X-ray imaging](https://www.frontiersin.org/journals/high-performance-computing/articles/10.3389/fhpcp.2025.1520151/full)
+14. [Low-cost user-customizable high-speed camera (Zynq)](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0232788)
+15. [Speckle-based strain sensing in multimode fiber](https://opg.optica.org/viewmedia.cfm?r=1&rwjcode=oe&uri=oe-27-20-28494&html=true)
+16. [Synthetic dataset of speckle images for fiber optic temperature sensor（OSF: osf.io/zfmp5）](https://pmc.ncbi.nlm.nih.gov/articles/PMC10139894/)
+17. [Experimental dataset for fiber optic specklegram sensing under thermal conditions](https://www.mdpi.com/2306-5729/10/4/44)
+18. [Optical MMF-based pipe leakage sensor using speckle pattern analysis](https://pmc.ncbi.nlm.nih.gov/articles/PMC10610934/)
+19. [Dynamic MMF specklegram sensor with automated training data generation](https://pmc.ncbi.nlm.nih.gov/articles/PMC13372338/)
+20. [Multi-dataset deep learning for FSS temperature sensing (Photonics 2026)](https://doi.org/10.3390/photonics13010084)
+21. [AMD University Program: PYNQ-Z2](https://amd.com/en/corporate/university-program/aup-boards/pynq-z2.html)
+22. [TUL PYNQ-Z2 product page](https://tulembedded.com/FPGA/ProductsPYNQ-Z2.html)
+23. [FINN getting started (supported boards)](https://finn.readthedocs.io/en/latest/getting_started.html)
+24. [FINN discussion #944: Pynq-Z2 prebuilt removed, rebuild supported](https://github.com/Xilinx/finn/discussions/944)
+25. [TSL1401CL datasheet](https://www.mouser.com/datasheet/2/588/TSL1401CL-1214741.pdf)
+26. [Zybo Z7 + Pcam 5C review](https://community.element14.com/products/roadtest/rv/roadtest_reviews/631/digilent_zybo_z7_pca_1)
+27. [pyMMF: multimode fiber mode solver & transmission matrix](https://github.com/wavefrontshaping/pyMMF)
+28. [Benchmarking dataset for leak detection in water distribution systems (Mendeley, CC BY)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10147960/)
+29. [Calibrated acoustic leak signatures in pressurised plastic water pipes](https://pmc.ncbi.nlm.nih.gov/articles/PMC13419278/)
+30. [Mendeley Data: Dataset of leak simulations in experimental testbed WDS](https://data.mendeley.com/datasets/tbrnp6vrnj/1)
+31. [pyMMF documentation](https://wavefrontshaping.github.io/pyMMF/)
