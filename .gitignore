@@ -9,3 +9,9 @@ _logs/
 data/processed/
 runs/**/*.pt
 *.npy
+build/xsim/
+build/vivado/*/project/
+.Xil/
+*.jou
+*.log
+__pycache__/

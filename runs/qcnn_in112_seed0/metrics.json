@@ -1,0 +1,41 @@
+{
+  "args": {
+    "data": "data/processed/fss_exp_thermal",
+    "input_size": 112,
+    "float_epochs": 60,
+    "qat_epochs": 20,
+    "batch_size": 128,
+    "seed": 0,
+    "out": "runs",
+    "export_dir": null
+  },
+  "val_rmse_float": 2.0290949381887913,
+  "val_rmse_qat": 2.58344195317477,
+  "n_params": 24929,
+  "shifts": [
+    8,
+    9,
+    8,
+    8,
+    8,
+    4,
+    6,
+    4
+  ],
+  "internal_test_int": {
+    "mse": 7.0204786733904125,
+    "rmse": 2.6496185901730107,
+    "mae": 2.08920078910458,
+    "max_error": 10.673829913139343,
+    "r2": 0.9972018535778424,
+    "n": 2278
+  },
+  "external_test_ds14_int": {
+    "mse": 9.91881680019559,
+    "rmse": 3.149415310846696,
+    "mae": 2.474712154018155,
+    "max_error": 11.243759177159518,
+    "r2": 0.9961173687052423,
+    "n": 1752
+  }
+}
