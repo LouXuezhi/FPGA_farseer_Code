@@ -3,23 +3,35 @@
 // downstream DSP, which would turn the memory into LUT logic.
 `timescale 1ns / 1ps
 
-// synchronous ROM, $readmemh initialised
+// Synchronous ROM, $readmemh initialised.
+// Optional slicing for parallel conv: holds blocks (g*STRIDE + OFFSET) of
+// length BLOCK_LEN from INIT_FILE, i.e. the weights of one multiplier lane.
 (* keep_hierarchy = "yes" *)
 module qcnn_sync_rom #(
-    parameter DEPTH     = 72,
-    parameter WIDTH     = 8,
-    parameter INIT_FILE = "l0_weight.mem"
+    parameter DEPTH      = 72,
+    parameter WIDTH      = 8,
+    parameter INIT_FILE  = "l0_weight.mem",
+    parameter FULL_DEPTH = DEPTH,          // entries in INIT_FILE
+    parameter BLOCK_LEN  = 1,
+    parameter STRIDE     = 1,
+    parameter OFFSET     = 0
 ) (
     input  wire                     clk,
     input  wire [$clog2(DEPTH)-1:0] rd_addr,
     output reg  [WIDTH-1:0]         rd_data
 );
     (* rom_style = "block" *) reg [WIDTH-1:0] mem [0:DEPTH-1];
-    initial $readmemh(INIT_FILE, mem);
+    reg [WIDTH-1:0] file_mem [0:FULL_DEPTH-1];
+    integer i;
+    initial begin
+        $readmemh(INIT_FILE, file_mem);
+        for (i = 0; i < DEPTH; i = i + 1)
+            mem[i] = file_mem[((i / BLOCK_LEN) * STRIDE + OFFSET) * BLOCK_LEN + i % BLOCK_LEN];
+    end
     always @(posedge clk) rd_data <= mem[rd_addr];
 endmodule
 
-// simple dual-port RAM: one write port, one registered read port
+// Simple dual-port RAM: one write port, one registered read port.
 (* keep_hierarchy = "yes" *)
 module qcnn_sdp_ram #(
     parameter DEPTH = 3136,

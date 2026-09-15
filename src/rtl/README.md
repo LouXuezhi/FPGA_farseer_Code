@@ -17,13 +17,14 @@ loulinux ──TCP/GbE──► PS: frame_server.py ─AXI DMA─► axis_frame_
 
 ```
 loader ─► conv0 ─► conv1 ─► conv2 ─► conv3 ─► head
-56²×1     28²×8    14²×16   7²×32    4²×32    GAP → FC32→16 → FC16→1
+56²×1     28²×16   14²×32   7²×64    4²×64    GAP → FC64→16 → FC16→1   (12 bit 激活)
 ```
 
 | 模块 | 作用 |
 |---|---|
 | `qcnn_frame_loader` | 字节流 → 输入 RAM |
-| `qcnn_conv_layer` | 3×3 卷积 + 移位重量化 + uint8 截断；每周期一次乘加，3 级流水 |
+| `qcnn_conv_layer` | 3×3 卷积 + 移位重量化 + 无符号截断；输出通道按 `PAR` 路并行（共享输入读、每路独立权重 ROM 与乘法器），4 级流水 |
+| `qcnn_mem` | 同步 ROM / 简单双口 RAM，`keep_hierarchy` 防止读寄存器被 DSP 吸收 |
 | `qcnn_head` | GAP + 两层 FC，共用一个乘加流水 |
 | `qcnn_core` | 串联各级；每级自带输出 RAM，帧逐级前进（多帧同时在途） |
 
