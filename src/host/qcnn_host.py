@@ -26,7 +26,11 @@ def open_link(args):
     if args.link == "uart":
         import serial
         port = serial.Serial(args.port, args.baud, timeout=0.1)
-        return port.write, lambda: port.read(4096)
+
+        def read():   # block on the first byte, then take whatever else arrived
+            first = port.read(1)
+            return first + port.read(port.in_waiting) if first else b""
+        return port.write, read
     host, tcp_port = args.addr.split(":")
     sock = socket.create_connection((host, int(tcp_port)))
     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -48,7 +52,7 @@ def main():
     parser.add_argument("--addr", default="127.0.0.1:5000")
     parser.add_argument("--frames", type=int, default=1752)
     parser.add_argument("--window", type=int, default=4, help="max frames in flight")
-    parser.add_argument("--qmodel", default="runs/qcnn_in56_seed0/qmodel.npz")
+    parser.add_argument("--qmodel", default="runs/qcnn_in56_w16-32-64-64_a12_seed0/qmodel.npz")
     args = parser.parse_args()
 
     frames, temps = load_ds14_frames(n=args.frames)

@@ -59,13 +59,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ckpt", default="runs/qcnn_in56_w16-32-64-64_a12_seed0/qat.pt")
     parser.add_argument("--reuse", type=int, default=64, help="hls4ml ReuseFactor (higher = fewer DSPs)")
+    parser.add_argument("--precision", default="ap_fixed<16,6>")
     parser.add_argument("--out", default="build/hls4ml/project")
     args = parser.parse_args()
 
     model = load_qat_weights(QCNNFloat(), args.ckpt).eval()
     config = hls4ml.utils.config_from_pytorch_model(
         model, input_shape=(1, 56, 56), granularity="name",
-        default_precision="ap_fixed<16,6>", channels_last_conversion="internal", transpose_outputs=False)
+        default_precision=args.precision, channels_last_conversion="internal", transpose_outputs=False)
     for layer in config["LayerName"].values():
         layer["ReuseFactor"] = args.reuse
     config["Model"]["ReuseFactor"] = args.reuse
