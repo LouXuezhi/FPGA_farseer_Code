@@ -30,7 +30,7 @@ module tb_axis_frame_link;
     initial begin
         $readmemh("tv_input.mem", pixel_mem);
         $readmemh("tv_output.mem", result_mem);
-        repeat (5) @(posedge clk);
+        repeat (30) @(posedge clk);   // past the gate-sim global reset (GSR, 100 ns)
         rst <= 0;
         while (pix < N_FRAME * N_PIXEL) begin
             s_tvalid <= ($random & 3) != 0;

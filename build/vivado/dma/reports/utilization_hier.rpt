@@ -1,0 +1,52 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (lin64) Build 6140274 Wed May 21 22:58:25 MDT 2025
+| Date         : Wed Sep 16 10:09:22 2026
+| Host         : LouLinux running 64-bit Ubuntu 22.04.5 LTS
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file /home/louxuezhi/Project/fiber_speckle_fpga/build/vivado/dma/reports/utilization_hier.rpt
+| Design       : qcnn_dma_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Routed
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++--------------------------------------------------------+--------------------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+|                        Instance                        |                      Module                      | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | DSP Blocks |
++--------------------------------------------------------+--------------------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+| qcnn_dma_wrapper                                       |                                            (top) |      11273 |      10620 |     480 |  173 | 8364 |     13 |     34 |        104 |
+|   qcnn_dma_i                                           |                                         qcnn_dma |      11273 |      10620 |     480 |  173 | 8364 |     13 |     34 |        104 |
+|     sc_reg                                             |                                qcnn_dma_sc_reg_0 |        469 |        468 |       0 |    1 |  582 |      0 |      0 |          0 |
+|       inst                                             |                        qcnn_dma_sc_reg_0_bd_41a4 |        469 |        468 |       0 |    1 |  582 |      0 |      0 |          0 |
+|         s00_entry_pipeline                             |  qcnn_dma_sc_reg_0_s00_entry_pipeline_imp_OAB3J4 |        403 |        403 |       0 |    0 |  412 |      0 |      0 |          0 |
+|         s00_nodes                                      |           qcnn_dma_sc_reg_0_s00_nodes_imp_IDPI9M |         45 |         45 |       0 |    0 |  131 |      0 |      0 |          0 |
+|     dma                                                |                                   qcnn_dma_dma_0 |       1374 |       1265 |       8 |  101 | 1985 |      2 |      0 |          0 |
+|       U0                                               |                           qcnn_dma_dma_0_axi_dma |       1374 |       1265 |       8 |  101 | 1985 |      2 |      0 |          0 |
+|         INCLUDE_MM2S_SOF_EOF_GENERATOR.I_MM2S_DMA_MNGR |                 qcnn_dma_dma_0_axi_dma_mm2s_mngr |         14 |         14 |       0 |    0 |   76 |      0 |      0 |          0 |
+|         INCLUDE_S2MM_SOF_EOF_GENERATOR.I_S2MM_DMA_MNGR |                 qcnn_dma_dma_0_axi_dma_s2mm_mngr |         28 |         28 |       0 |    0 |  104 |      0 |      0 |          0 |
+|         I_AXI_DMA_REG_MODULE                           |                qcnn_dma_dma_0_axi_dma_reg_module |        152 |        152 |       0 |    0 |  267 |      0 |      0 |          0 |
+|         I_PRMRY_DATAMOVER                              |                     qcnn_dma_dma_0_axi_datamover |       1165 |       1056 |       8 |  101 | 1500 |      2 |      0 |          0 |
+|     link                                               |                                  qcnn_dma_link_0 |       7207 |       7141 |      26 |   40 | 2673 |     11 |     34 |        104 |
+|       inst                                             |                  qcnn_dma_link_0_axis_frame_link |       7207 |       7141 |      26 |   40 | 2673 |     11 |     34 |        104 |
+|         u_core                                         |                        qcnn_dma_link_0_qcnn_core |       7184 |       7120 |      24 |   40 | 2649 |     11 |     34 |        104 |
+|     sc_mem                                             |                                qcnn_dma_sc_mem_0 |       2210 |       1734 |     446 |   30 | 3090 |      0 |      0 |          0 |
+|       inst                                             |                        qcnn_dma_sc_mem_0_bd_8111 |       2210 |       1734 |     446 |   30 | 3090 |      0 |      0 |          0 |
+|         m00_exit_pipeline                              |   qcnn_dma_sc_mem_0_m00_exit_pipeline_imp_NHNUF4 |        633 |        612 |       0 |   21 |  956 |      0 |      0 |          0 |
+|         m00_nodes                                      |           qcnn_dma_sc_mem_0_m00_nodes_imp_1A1IWC |        624 |        393 |     230 |    1 |  579 |      0 |      0 |          0 |
+|         s00_entry_pipeline                             | qcnn_dma_sc_mem_0_s00_entry_pipeline_imp_1NSL8LF |        150 |        150 |       0 |    0 |  268 |      0 |      0 |          0 |
+|         s00_nodes                                      |          qcnn_dma_sc_mem_0_s00_nodes_imp_1HW2EVT |        279 |        177 |     102 |    0 |  254 |      0 |      0 |          0 |
+|         s01_entry_pipeline                             |  qcnn_dma_sc_mem_0_s01_entry_pipeline_imp_LCN2FR |        182 |        175 |       0 |    7 |  304 |      0 |      0 |          0 |
+|         s01_nodes                                      |           qcnn_dma_sc_mem_0_s01_nodes_imp_QF1IGF |        332 |        218 |     114 |    0 |  396 |      0 |      0 |          0 |
+|         switchboards                                   |       qcnn_dma_sc_mem_0_switchboards_imp_1B454NH |          1 |          1 |       0 |    0 |  303 |      0 |      0 |          0 |
++--------------------------------------------------------+--------------------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

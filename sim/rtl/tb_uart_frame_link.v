@@ -49,7 +49,7 @@ module tb_uart_frame_link;
         $readmemh("tv_input.mem", pixel_mem);
         $readmemh("tv_output.mem", result_mem);
         host_tx_tvalid = 0;
-        repeat (10) @(posedge clk);
+        repeat (30) @(posedge clk);   // past the gate-sim global reset (GSR, 100 ns)
         rst <= 0;
         send_byte(8'h00);                              // junk before sync
         for (f = 0; f < N_FRAME; f = f + 1) begin

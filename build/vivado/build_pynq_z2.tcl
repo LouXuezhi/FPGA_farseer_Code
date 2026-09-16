@@ -19,28 +19,55 @@ if {$variant eq "uart"} {
     set_property top top_pynq_z2_uart [current_fileset]
 } else {
     # ---------------- block design: PS7 + DMA + frame link ----------------
+    # Connections are explicit (no bd automation): PS GP0 -> DMA registers,
+    # DMA masters -> PS HP0 (DDR), DMA streams <-> axis_frame_link.
     create_bd_design qcnn_dma
-    set ps [create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7 ps7]
-    set_property -dict [list CONFIG.PCW_USE_S_AXI_HP0 1 CONFIG.PCW_USE_FABRIC_INTERRUPT 1 \
-        CONFIG.PCW_IRQ_F2P_INTR 1 CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ 100] $ps
-    set dma [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma dma]
+    set ps   [create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7 ps7]
+    set_property -dict [list CONFIG.PCW_USE_S_AXI_HP0 1 CONFIG.PCW_USE_M_AXI_GP0 1 \
+        CONFIG.PCW_USE_FABRIC_INTERRUPT 1 CONFIG.PCW_IRQ_F2P_INTR 1 \
+        CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ 100] $ps
+    set dma  [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma dma]
     set_property -dict [list CONFIG.c_include_sg 0 CONFIG.c_sg_length_width 26 \
         CONFIG.c_m_axis_mm2s_tdata_width 8] $dma
     set link [create_bd_cell -type module -reference axis_frame_link link]
     set irq  [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat irq_concat]
+    set rst  [create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset rst_100M]
+    set sc_reg  [create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect sc_reg]
+    set sc_mem  [create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect sc_mem]
+    set_property CONFIG.NUM_SI 1 $sc_reg
+    set_property CONFIG.NUM_SI 2 $sc_mem
 
     make_bd_intf_pins_external [get_bd_intf_pins ps7/DDR] [get_bd_intf_pins ps7/FIXED_IO]
+
+    # clock and reset
+    set clk [get_bd_pins ps7/FCLK_CLK0]
+    connect_bd_net $clk [get_bd_pins rst_100M/slowest_sync_clk]
+    connect_bd_net [get_bd_pins ps7/FCLK_RESET0_N] [get_bd_pins rst_100M/ext_reset_in]
+    foreach pin {ps7/M_AXI_GP0_ACLK ps7/S_AXI_HP0_ACLK dma/s_axi_lite_aclk dma/m_axi_mm2s_aclk \
+                 dma/m_axi_s2mm_aclk dma/axi_resetn link/clk sc_reg/aclk sc_mem/aclk \
+                 sc_reg/aresetn sc_mem/aresetn} {
+        if {[string match *aresetn $pin] || [string match *axi_resetn $pin]} {
+            connect_bd_net [get_bd_pins rst_100M/peripheral_aresetn] [get_bd_pins $pin]
+        } else {
+            connect_bd_net $clk [get_bd_pins $pin]
+        }
+    }
+    connect_bd_net [get_bd_pins rst_100M/peripheral_reset] [get_bd_pins link/rst]
+
+    # data paths
+    connect_bd_intf_net [get_bd_intf_pins ps7/M_AXI_GP0]   [get_bd_intf_pins sc_reg/S00_AXI]
+    connect_bd_intf_net [get_bd_intf_pins sc_reg/M00_AXI]  [get_bd_intf_pins dma/S_AXI_LITE]
+    connect_bd_intf_net [get_bd_intf_pins dma/M_AXI_MM2S]  [get_bd_intf_pins sc_mem/S00_AXI]
+    connect_bd_intf_net [get_bd_intf_pins dma/M_AXI_S2MM]  [get_bd_intf_pins sc_mem/S01_AXI]
+    connect_bd_intf_net [get_bd_intf_pins sc_mem/M00_AXI]  [get_bd_intf_pins ps7/S_AXI_HP0]
     connect_bd_intf_net [get_bd_intf_pins dma/M_AXIS_MM2S] [get_bd_intf_pins link/s_axis]
-    connect_bd_intf_net [get_bd_intf_pins link/m_axis] [get_bd_intf_pins dma/S_AXIS_S2MM]
-    connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins link/clk]
+    connect_bd_intf_net [get_bd_intf_pins link/m_axis]     [get_bd_intf_pins dma/S_AXIS_S2MM]
+
     connect_bd_net [get_bd_pins dma/mm2s_introut] [get_bd_pins irq_concat/In0]
     connect_bd_net [get_bd_pins dma/s2mm_introut] [get_bd_pins irq_concat/In1]
-    connect_bd_net [get_bd_pins irq_concat/dout] [get_bd_pins ps7/IRQ_F2P]
-    # GP0 -> DMA control, DMA masters -> HP0 (automation adds interconnects and resets)
-    apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master /ps7/M_AXI_GP0 Clk Auto} [get_bd_intf_pins dma/S_AXI_LITE]
-    apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave /ps7/S_AXI_HP0 Clk Auto} [get_bd_intf_pins dma/M_AXI_MM2S]
-    apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave /ps7/S_AXI_HP0 Clk Auto} [get_bd_intf_pins dma/M_AXI_S2MM]
-    connect_bd_net [get_bd_pins link/rst] [get_bd_pins rst_ps7_100M/peripheral_reset]
+    connect_bd_net [get_bd_pins irq_concat/dout]  [get_bd_pins ps7/IRQ_F2P]
+
+    assign_bd_address
     validate_bd_design
     save_bd_design
     make_wrapper -files [get_files qcnn_dma.bd] -top

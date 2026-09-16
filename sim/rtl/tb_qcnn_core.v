@@ -31,7 +31,7 @@ module tb_qcnn_core #(parameter N_FRAME = 16);   // up to 16 test frames
         $readmemh("tv_input.mem", pixel_mem);
         $readmemh("tv_output.mem", result_mem);
         pixel_tvalid = 0;
-        repeat (5) @(posedge clk);
+        repeat (30) @(posedge clk);   // past the gate-sim global reset (GSR, 100 ns)
         rst <= 0;
         while (pix < N_FRAME * N_PIXEL) begin
             pixel_tdata  <= pixel_mem[pix];
@@ -58,6 +58,7 @@ module tb_qcnn_core #(parameter N_FRAME = 16);   // up to 16 test frames
         end
     end
 
+`ifndef POSTSYNTH   // taps into the netlist hierarchy slow gate-level sim down a lot
     // ---------------- frame-0 feature map checker ----------------
     // Watches the write port of every output RAM (ports survive synthesis,
     // so the same check runs on RTL and on the post-synthesis netlist).
@@ -82,6 +83,8 @@ module tb_qcnn_core #(parameter N_FRAME = 16);   // up to 16 test frames
     wire [15:0] watch3_data = dut.u_conv3.u_out_ram.wr_data;
     tb_map_watch #(.LAYER(3), .N_WRITE(C3 * 4 * 4), .MAP_FILE("tv_frame0_l3.mem")) u_watch3 (
         .clk(clk), .wr_en(watch3_en), .wr_addr(watch3_addr), .wr_data(watch3_data));
+
+`endif
 
 endmodule
 

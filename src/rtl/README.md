@@ -43,8 +43,15 @@ loader ─► conv0 ─► conv1 ─► conv2 ─► conv3 ─► head
 
 ```bash
 ./build/fetch_rtl_deps.sh
-./sim/rtl/run_xsim.sh tb_qcnn_core          # 16 帧结果 + 帧 0 各层特征图，对比 Python 定点模型
-./sim/rtl/run_xsim.sh tb_uart_frame_link    # UART 3 Mbps 连发 4 帧
-./sim/rtl/run_xsim.sh tb_axis_frame_link    # DMA 式批次 + 随机反压
+./sim/rtl/run_xsim.sh tb_qcnn_core            # 16 帧结果 + 帧 0 各层特征图，对比 Python 定点模型
+./sim/rtl/run_xsim.sh tb_uart_frame_link      # UART 3 Mbps 连发 4 帧
+./sim/rtl/run_xsim.sh tb_axis_frame_link      # DMA 式批次 + 随机反压
+./sim/rtl/run_xsim_layer.sh 2 postsynth       # 单层：RTL 或综合后网表（0–3）
+./sim/rtl/run_xsim_head.sh postsynth          # GAP + FC
+./sim/rtl/run_postsynth.sh 1                  # 整核网表功能仿真
 vivado -mode batch -source build/vivado/build_pynq_z2.tcl -tclargs uart   # 或 dma
 ```
+
+综合后仿真是必需的一步：综合会忽略 `initial` 块里的非常量赋值，这类代码仿真通过、上板却是错的。
+单层 / head 的 testbench 只通过模块端口读回结果，RTL 和网表共用同一套激励。
+门级仿真里前 100 ns 有全局复位（GSR），testbench 的复位要持续到它释放之后再开始发数据。
