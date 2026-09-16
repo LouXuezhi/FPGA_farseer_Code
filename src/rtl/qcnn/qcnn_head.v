@@ -1,7 +1,7 @@
 // qcnn_head: GAP over 4x4 -> FC(C->HIDDEN)+ReLU/unsigned -> FC(HIDDEN->1) -> int16 result.
 //
 // GAP : read source map, sum 16 pixels, round-shift by 4          (2-stage)
-// FC  : shared multiply-accumulate for both FC layers, layer_q     (2-stage)
+// FC  : shared multiply-accumulate for both FC layers, layer_q     (3-stage: mul, acc, requant)
 // Releases the source map (src_taken) right after the GAP reads.
 `timescale 1ns / 1ps
 
@@ -63,7 +63,9 @@ module qcnn_head #(
     reg        fc_valid_q, fc_first_q, fc_last_q, fc_layer_q;
     reg [7:0]  fc_out_q;
     reg signed [ACT_BITS+8:0] fc_prod_q;
-    reg signed [31:0] fc_acc_q;
+    reg signed [31:0] fc_bias_q, fc_acc_q;
+    reg        fc_done_q, fc_done_layer_q;                        // FC stage 3: neuron sum complete
+    reg [7:0]  fc_done_out_q;
 
     assign m_axis_result_tdata  = result_q;
     assign m_axis_result_tvalid = result_valid_q;
@@ -119,9 +121,9 @@ module qcnn_head #(
     reg signed [31:0] fc_acc_sum, fc1_round, fc2_round;
     always @* begin
         gap_sum    = (gap_first_q ? 0 : gap_sum_q) + src_rd_data;
-        fc_acc_sum = (fc_first_q ? (fc_layer_q ? fc2_bias_rom[0] : fc1_bias_rom[fc_out_q]) : fc_acc_q) + fc_prod_q;
-        fc1_round  = (fc_acc_sum + (32'sd1 <<< (FC1_SHIFT - 1))) >>> FC1_SHIFT;
-        fc2_round  = (fc_acc_sum + (32'sd1 <<< (FC2_SHIFT - 1))) >>> FC2_SHIFT;
+        fc_acc_sum = (fc_first_q ? fc_bias_q : fc_acc_q) + fc_prod_q;
+        fc1_round  = (fc_acc_q + (32'sd1 <<< (FC1_SHIFT - 1))) >>> FC1_SHIFT;
+        fc2_round  = (fc_acc_q + (32'sd1 <<< (FC2_SHIFT - 1))) >>> FC2_SHIFT;
     end
 
     always @(posedge clk) begin
@@ -130,11 +132,13 @@ module qcnn_head #(
             result_valid_q <= 1'b0;
             gap_valid_q    <= 1'b0;
             fc_valid_q     <= 1'b0;
+            fc_done_q      <= 1'b0;
         end else begin
             state_q        <= state_d;
-            result_valid_q <= result_valid_d | (fc_valid_q & fc_last_q & fc_layer_q);
+            result_valid_q <= result_valid_d | (fc_done_q & fc_done_layer_q);
             gap_valid_q    <= (state_q == ST_GAP);
             fc_valid_q     <= (state_q == ST_FC);
+            fc_done_q      <= fc_valid_q & fc_last_q;
         end
         {ch_q, pix_q, out_q, layer_q} <= {ch_d, pix_d, out_d, layer_d};
 
@@ -151,13 +155,17 @@ module qcnn_head #(
         fc_last_q  <= (ch_q == fc_n_in - 1);
         fc_layer_q <= layer_q;
         fc_out_q   <= out_q;
+        fc_bias_q  <= layer_q ? fc2_bias_rom[0] : fc1_bias_rom[out_q];
         fc_prod_q  <= layer_q ? $signed({1'b0, fc1_mem[ch_q]}) * fc2_weight_rom[ch_q]
                               : $signed({1'b0, gap_mem[ch_q]}) * fc1_weight_rom[out_q * C_IN + ch_q];
-        // FC stage 2: accumulate, write neuron output
-        fc_acc_q <= fc_acc_sum;
-        if (fc_valid_q && fc_last_q && !fc_layer_q)
-            fc1_mem[fc_out_q] <= (fc1_round < 0) ? 0 : (fc1_round > ACT_MAX) ? ACT_MAX : fc1_round[ACT_BITS-1:0];
-        if (fc_valid_q && fc_last_q && fc_layer_q)
+        // FC stage 2: accumulate
+        if (fc_valid_q) fc_acc_q <= fc_acc_sum;
+        fc_done_layer_q <= fc_layer_q;
+        fc_done_out_q   <= fc_out_q;
+        // FC stage 3: requantize the finished neuron
+        if (fc_done_q && !fc_done_layer_q)
+            fc1_mem[fc_done_out_q] <= (fc1_round < 0) ? 0 : (fc1_round > ACT_MAX) ? ACT_MAX : fc1_round[ACT_BITS-1:0];
+        if (fc_done_q && fc_done_layer_q)
             result_q <= (fc2_round < -32768) ? -16'sd32768 : (fc2_round > 32767) ? 16'sd32767 : fc2_round[15:0];
     end
 

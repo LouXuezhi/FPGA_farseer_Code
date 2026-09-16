@@ -62,8 +62,15 @@ def hex_lines(values, bits):
     return "\n".join(f"{int(v) & mask:0{bits // 4}x}" for v in np.ravel(values)) + "\n"
 
 
-def export_rtl(qmodel, x_u8, out_dir):
-    """Write ROM .mem files, a Verilog header with shifts, and test vectors."""
+LANES = (8, 32, 32, 32)  # parallel lanes per conv layer (RTL choice): divides C_OUT, <= C_IN*9
+
+
+def export_rtl(qmodel, x_u8, out_dir, lanes=LANES):
+    """Write ROM .mem files, a Verilog header with shapes/shifts, and test vectors.
+
+    Conv weights go to one file per lane p: output channels g*PAR + p for all
+    groups g, taps in [ic][ky][kx] order (synthesis cannot slice in initial blocks).
+    """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     convs = [layer for layer in qmodel if layer["type"] == "conv"]
@@ -71,11 +78,17 @@ def export_rtl(qmodel, x_u8, out_dir):
               f"localparam ACT_BITS = {int(np.log2(convs[0].get('act_hi', 255) + 1))};",
               f"localparam HIDDEN = {convs[-1]['w'].shape[1]};"]
     header += [f"localparam C{i} = {layer['w'].shape[0]};" for i, layer in enumerate(convs[:-2])]
+    header += [f"localparam PAR{i} = {par};" for i, par in enumerate(lanes)]
     for i, layer in enumerate(qmodel):
         header.append(f"localparam L{i}_SHIFT = {layer['shift']};")
-        if layer["type"] == "conv":
-            (out / f"l{i}_weight.mem").write_text(hex_lines(layer["w"], 8))  # order [oc][ic][ky][kx]
-            (out / f"l{i}_bias.mem").write_text(hex_lines(layer["b"], 32))
+        if layer["type"] != "conv":
+            continue
+        (out / f"l{i}_bias.mem").write_text(hex_lines(layer["b"], 32))
+        if i < len(lanes):
+            for lane in range(lanes[i]):
+                (out / f"l{i}_weight_lane{lane:02d}.mem").write_text(hex_lines(layer["w"][lane::lanes[i]], 8))
+        else:
+            (out / f"l{i}_weight.mem").write_text(hex_lines(layer["w"], 8))  # FC: [out][in]
     (out / "qcnn_params.vh").write_text("\n".join(header) + "\n")
 
     layer_maps = forward_int(qmodel, x_u8, keep_layers=True)

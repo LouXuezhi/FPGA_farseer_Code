@@ -2,18 +2,16 @@
 // frame-0 feature maps of all conv layers against the Python integer model.
 `timescale 1ns / 1ps
 
-module tb_qcnn_core;
+module tb_qcnn_core #(parameter N_FRAME = 16);   // up to 16 test frames
 
     `include "qcnn_params.vh"
-    localparam N_FRAME = 16;
     localparam N_PIXEL = 56 * 56;
 
     reg clk = 0, rst = 1;
     always #5 clk = ~clk;  // 100 MHz
 
-    reg  [7:0]  pixel_mem  [0:N_FRAME*N_PIXEL-1];
-    reg  [15:0] result_mem [0:N_FRAME-1];
-    reg  [15:0] map_mem    [0:65535];
+    reg  [7:0]  pixel_mem  [0:16*N_PIXEL-1];
+    reg  [15:0] result_mem [0:15];
 
     reg  [7:0]  pixel_tdata;
     reg         pixel_tvalid;
@@ -61,33 +59,49 @@ module tb_qcnn_core;
     end
 
     // ---------------- frame-0 feature map checker ----------------
-    task check_map(input integer layer, input integer n);
-        integer i, bad;
-        begin
-            bad = 0;
-            for (i = 0; i < n; i = i + 1) begin
-                case (layer)
-                    0: if (dut.u_conv0.u_out_ram.mem[i] !== map_mem[i][ACT_BITS-1:0]) bad = bad + 1;
-                    1: if (dut.u_conv1.u_out_ram.mem[i] !== map_mem[i][ACT_BITS-1:0]) bad = bad + 1;
-                    2: if (dut.u_conv2.u_out_ram.mem[i] !== map_mem[i][ACT_BITS-1:0]) bad = bad + 1;
-                    3: if (dut.u_conv3.u_out_ram.mem[i] !== map_mem[i][ACT_BITS-1:0]) bad = bad + 1;
-                endcase
-            end
-            $display("LAYER %0d frame-0 map: %0d/%0d match", layer, n - bad, n);
+    // Watches the write port of every output RAM (ports survive synthesis,
+    // so the same check runs on RTL and on the post-synthesis netlist).
+    // Each map is written exactly once per frame: the first n writes are frame 0.
+    wire        watch0_en   = dut.u_conv0.u_out_ram.wr_en;
+    wire [15:0] watch0_addr = dut.u_conv0.u_out_ram.wr_addr;
+    wire [15:0] watch0_data = dut.u_conv0.u_out_ram.wr_data;
+    tb_map_watch #(.LAYER(0), .N_WRITE(C0 * 28 * 28), .MAP_FILE("tv_frame0_l0.mem")) u_watch0 (
+        .clk(clk), .wr_en(watch0_en), .wr_addr(watch0_addr), .wr_data(watch0_data));
+    wire        watch1_en   = dut.u_conv1.u_out_ram.wr_en;
+    wire [15:0] watch1_addr = dut.u_conv1.u_out_ram.wr_addr;
+    wire [15:0] watch1_data = dut.u_conv1.u_out_ram.wr_data;
+    tb_map_watch #(.LAYER(1), .N_WRITE(C1 * 14 * 14), .MAP_FILE("tv_frame0_l1.mem")) u_watch1 (
+        .clk(clk), .wr_en(watch1_en), .wr_addr(watch1_addr), .wr_data(watch1_data));
+    wire        watch2_en   = dut.u_conv2.u_out_ram.wr_en;
+    wire [15:0] watch2_addr = dut.u_conv2.u_out_ram.wr_addr;
+    wire [15:0] watch2_data = dut.u_conv2.u_out_ram.wr_data;
+    tb_map_watch #(.LAYER(2), .N_WRITE(C2 * 7 * 7), .MAP_FILE("tv_frame0_l2.mem")) u_watch2 (
+        .clk(clk), .wr_en(watch2_en), .wr_addr(watch2_addr), .wr_data(watch2_data));
+    wire        watch3_en   = dut.u_conv3.u_out_ram.wr_en;
+    wire [15:0] watch3_addr = dut.u_conv3.u_out_ram.wr_addr;
+    wire [15:0] watch3_data = dut.u_conv3.u_out_ram.wr_data;
+    tb_map_watch #(.LAYER(3), .N_WRITE(C3 * 4 * 4), .MAP_FILE("tv_frame0_l3.mem")) u_watch3 (
+        .clk(clk), .wr_en(watch3_en), .wr_addr(watch3_addr), .wr_data(watch3_data));
+
+endmodule
+
+
+// compares the first N_WRITE writes of one RAM port against a golden map
+module tb_map_watch #(parameter LAYER = 0, parameter N_WRITE = 1, parameter MAP_FILE = "") (
+    input wire        clk,
+    input wire        wr_en,
+    input wire [15:0] wr_addr,
+    input wire [15:0] wr_data
+);
+    reg [15:0] golden [0:65535];
+    integer n_write = 0, n_bad = 0;
+    initial $readmemh(MAP_FILE, golden);
+    always @(posedge clk) if (wr_en === 1'b1 && n_write < N_WRITE) begin
+        if (wr_data !== golden[wr_addr]) begin
+            if (n_bad < 3) $display("LAYER %0d addr %0d rtl=%0d golden=%0d", LAYER, wr_addr, wr_data, golden[wr_addr]);
+            n_bad = n_bad + 1;
         end
-    endtask
-
-    initial begin
-        @(posedge dut.valid[1]); $readmemh("tv_frame0_l0.mem", map_mem); check_map(0, C0 * 28 * 28);
-        @(posedge dut.valid[2]); $readmemh("tv_frame0_l1.mem", map_mem); check_map(1, C1 * 14 * 14);
-        @(posedge dut.valid[3]); $readmemh("tv_frame0_l2.mem", map_mem); check_map(2, C2 * 7 * 7);
-        @(posedge dut.valid[4]); $readmemh("tv_frame0_l3.mem", map_mem); check_map(3, C3 * 4 * 4);
+        n_write = n_write + 1;
+        if (n_write == N_WRITE) $display("LAYER %0d frame-0 map: %0d/%0d match", LAYER, N_WRITE - n_bad, N_WRITE);
     end
-
-    initial begin
-        #2_000_000_000;
-        $display("TIMEOUT after %0d results", n_result);
-        $finish;
-    end
-
 endmodule
