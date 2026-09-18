@@ -1,6 +1,8 @@
 """Frame server speaking frame_protocol, over TCP or a pseudo terminal.
 
-  --backend dma    : on the PYNQ-Z2, frames -> AXI DMA -> axis_frame_link (RTL)
+  --backend dma    : on a PYNQ image (PYNQ-Z2), frames -> AXI DMA -> axis_frame_link (RTL)
+  --backend mmio   : same path without PYNQ (e.g. FZ3B stock Linux): AXI DMA
+                     registers through /dev/mem, reserved buffer at --buf-phys
   --backend golden : on any PC, integer golden model (board stand-in)
   --backend echo   : replies zeros, to measure link and host overhead alone
   --link pty       : serve on a pseudo terminal, so the host UART path can be
@@ -9,11 +11,13 @@
 Every complete request already in the buffer is answered as one batch, so
 throughput grows with load instead of one transfer per frame.
 
-  python3 frame_server.py --backend dma --bit qcnn_dma.bit     # on the board
+  python3 frame_server.py --backend dma --bit qcnn_dma.bit     # PYNQ-Z2
+  python3 frame_server.py --backend mmio --dma-base 0xA0000000 --buf-phys 0x7FF00000   # FZ3B
   python  src/host/frame_server.py --backend golden            # TCP stand-in
   python  src/host/frame_server.py --backend golden --link pty # UART stand-in
 """
 import argparse
+import mmap
 import os
 import pty
 import socket
@@ -62,6 +66,46 @@ class DmaBackend:
         return self.out_buf[:n].copy()
 
 
+class MmioDmaBackend:
+    """AXI DMA (simple mode, PG021) through /dev/mem, for Linux images without PYNQ.
+
+    buf_phys: physically contiguous memory Linux does not use (reserved-memory
+    node or mem= boot argument). /dev/mem with O_SYNC maps it uncached, so no
+    cache maintenance is needed around the non-coherent HP port.
+    """
+    MM2S_CR, MM2S_SR, MM2S_SA, MM2S_LEN = 0x00, 0x04, 0x18, 0x28
+    S2MM_CR, S2MM_SR, S2MM_DA, S2MM_LEN = 0x30, 0x34, 0x48, 0x58
+    RUN, RESET, IOC = 0x1, 0x4, 0x1000
+    OUT_OFF = -(-MAX_BATCH * N_PIXEL // 4096) * 4096           # results start on the next page
+    BUF_SIZE = OUT_OFF + 4 * MAX_BATCH
+
+    def __init__(self, regs, buf, buf_phys):
+        """regs: 32-bit register array, buf: BUF_SIZE bytes seen by the DMA at buf_phys."""
+        self.regs, self.buf = regs, buf
+        self.in_phys, self.out_phys = buf_phys, buf_phys + self.OUT_OFF
+        for cr in (self.MM2S_CR, self.S2MM_CR):
+            regs[cr // 4] = self.RESET
+            while regs[cr // 4] & self.RESET:                   # self-clears when done
+                pass
+            regs[cr // 4] = self.RUN
+
+    @classmethod
+    def open(cls, dma_base, buf_phys):
+        fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
+        regs = np.frombuffer(mmap.mmap(fd, 0x1000, offset=dma_base), dtype=np.uint32)
+        return cls(regs, mmap.mmap(fd, cls.BUF_SIZE, offset=buf_phys), buf_phys)
+
+    def run(self, frames_u8):
+        n, r = len(frames_u8), self.regs
+        self.buf[:n * N_PIXEL] = frames_u8.tobytes()
+        r[self.S2MM_DA // 4], r[self.S2MM_LEN // 4] = self.out_phys, 4 * n       # arm receive first
+        r[self.MM2S_SA // 4], r[self.MM2S_LEN // 4] = self.in_phys, n * N_PIXEL  # tlast after frame n-1
+        while not r[self.S2MM_SR // 4] & self.IOC:                               # batch written back
+            pass
+        r[self.MM2S_SR // 4] = r[self.S2MM_SR // 4] = self.IOC                   # clear (write 1)
+        return np.frombuffer(self.buf, dtype=np.int32, count=n, offset=self.OUT_OFF).copy()
+
+
 def serve(read, write, backend):
     buf = bytearray()
     while chunk := read():
@@ -91,13 +135,16 @@ def serve_pty(backend):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--backend", choices=["dma", "golden", "echo"], required=True)
+    parser.add_argument("--backend", choices=["dma", "mmio", "golden", "echo"], required=True)
     parser.add_argument("--link", choices=["tcp", "pty"], default="tcp")
     parser.add_argument("--bit", default="qcnn_dma.bit")
     parser.add_argument("--qmodel", default="runs/qcnn_in56_w16-32-64-64_a12_seed0/qmodel.npz")
     parser.add_argument("--port", type=int, default=5000)
+    parser.add_argument("--dma-base", type=lambda v: int(v, 0), default=0xA0000000, help="mmio: AXI DMA registers")
+    parser.add_argument("--buf-phys", type=lambda v: int(v, 0), default=0x7FF00000, help="mmio: reserved buffer (1 MB)")
     args = parser.parse_args()
-    backend = {"dma": lambda: DmaBackend(args.bit), "golden": lambda: GoldenBackend(args.qmodel),
+    backend = {"dma": lambda: DmaBackend(args.bit), "mmio": lambda: MmioDmaBackend.open(args.dma_base, args.buf_phys),
+               "golden": lambda: GoldenBackend(args.qmodel),
                "echo": EchoBackend}[args.backend]()
     if args.link == "pty":
         serve_pty(backend)

@@ -6,7 +6,7 @@ LAYER=${1:-0}
 MODE=${2:-rtl}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 WORK=$ROOT/build/xsim/conv${LAYER}_${MODE}
-source /opt/xilinx/2025.1/Vivado/settings64.sh
+source "${XILINX_ROOT:-/opt/xilinx/2026.1}/Vivado/settings64.sh"
 
 rm -rf "$WORK" && mkdir -p "$WORK" && cd "$WORK"
 cp "$ROOT"/src/rtl/gen/*.mem .

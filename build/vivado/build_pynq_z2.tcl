@@ -6,12 +6,10 @@ set root    [file normalize [file dirname [info script]]/../..]
 set out     $root/build/vivado/$variant
 set part    xc7z020clg400-1
 
+source $root/build/vivado/qcnn_common.tcl
+
 create_project -force qcnn_$variant $out/project -part $part
-add_files [glob $root/src/rtl/qcnn/*.v $root/src/rtl/link/*.v]
-add_files [glob $root/src/rtl/gen/*.mem] $root/src/rtl/gen/qcnn_params.vh
-add_files $root/refs/verilog-uart/rtl/uart.v $root/refs/verilog-uart/rtl/uart_rx.v \
-          $root/refs/verilog-uart/rtl/uart_tx.v $root/refs/verilog-axis/rtl/axis_fifo.v
-set_property include_dirs $root/src/rtl/gen [current_fileset]
+add_qcnn_sources $root
 
 if {$variant eq "uart"} {
     add_files $root/src/rtl/top/top_pynq_z2_uart.v
@@ -75,15 +73,4 @@ if {$variant eq "uart"} {
     set_property top qcnn_dma_wrapper [current_fileset]
 }
 
-launch_runs impl_1 -to_step write_bitstream -jobs 8
-wait_on_run impl_1
-open_run impl_1
-file mkdir $out/reports
-report_utilization    -file $out/reports/utilization.rpt
-report_utilization    -hierarchical -hierarchical_depth 4 -file $out/reports/utilization_hier.rpt
-report_timing_summary -file $out/reports/timing_summary.rpt
-report_power          -file $out/reports/power.rpt
-file copy -force [glob $out/project/qcnn_$variant.runs/impl_1/*.bit] $out/qcnn_$variant.bit
-if {$variant eq "dma"} {
-    file copy -force $out/project/qcnn_$variant.gen/sources_1/bd/qcnn_dma/hw_handoff/qcnn_dma.hwh $out/qcnn_$variant.hwh
-}
+implement_and_report $out qcnn_$variant [expr {$variant eq "dma" ? "qcnn_dma" : ""}]

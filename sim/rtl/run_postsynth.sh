@@ -6,7 +6,7 @@ set -euo pipefail
 N_FRAME=${1:-4}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 WORK=$ROOT/build/xsim/postsynth
-source /opt/xilinx/2025.1/Vivado/settings64.sh
+source "${XILINX_ROOT:-/opt/xilinx/2026.1}/Vivado/settings64.sh"
 
 mkdir -p "$WORK" && cd "$WORK"
 cp "$ROOT"/src/rtl/gen/*.mem .

@@ -5,7 +5,7 @@ shopt -s nullglob
 TOP=${1:-tb_qcnn_core}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 WORK=$ROOT/build/xsim/$TOP
-source /opt/xilinx/2025.1/Vivado/settings64.sh
+source "${XILINX_ROOT:-/opt/xilinx/2026.1}/Vivado/settings64.sh"
 
 mkdir -p "$WORK" && cd "$WORK"
 cp "$ROOT"/src/rtl/gen/*.mem .                     # $readmemh looks in the run dir
