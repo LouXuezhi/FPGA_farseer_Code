@@ -1,19 +1,48 @@
+# ---------- datasets (download: data/README.md) ----------
 data/raw/
-data/synth/
-refs/
-_logs/
-*.zip
-*.bit
-*.xpr
-.Xil/
 data/processed/
-runs/**/*.pt
+data/synth/
 *.npy
-build/xsim/
+*.zip
+
+# ---------- third-party repos (fetch: build/fetch_rtl_deps.sh) ----------
+refs/
+
+# ---------- training: keep metrics / splits / qmodel, drop checkpoints ----------
+runs/**/*.pt
+
+# ---------- Vivado / Vitis / xsim generated ----------
 build/vivado/*/project/
+build/xsim/
+build/hls4ml/project*/
 .Xil/
+xsim.dir/
 *.jou
 *.log
-__pycache__/
-build/hls4ml/project*/
+*.str
+*.wdb
+*.pb
+*.xpr
+
+# ---------- bitstreams: only board/<board>/prebuilt/ is shared ----------
+*.bit
 *.bin
+*.xsa
+!board/*/prebuilt/*.bit
+!board/*/prebuilt/*.bin
+!board/*/prebuilt/*.xsa
+
+# ---------- run logs ----------
+_logs/
+
+# ---------- Python ----------
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+
+# ---------- OS / editors ----------
+.DS_Store
+.vscode/
+.idea/
+*.swp
