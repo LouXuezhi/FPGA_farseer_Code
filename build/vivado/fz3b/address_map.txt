@@ -1,0 +1,1 @@
+SEG_temp_dma_Reg                         0xA0000000  0x0000010000

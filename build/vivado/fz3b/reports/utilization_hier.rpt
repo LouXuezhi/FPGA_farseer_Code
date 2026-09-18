@@ -1,0 +1,51 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2026.1 (lin64) Build 6511674 Tue Jun 16 11:01:26 MDT 2026
+| Date         : Fri Sep 18 15:17:55 2026
+| Host         : LouLinux running 64-bit Ubuntu 22.04.5 LTS
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file /home/louxuezhi/Project/fiber_speckle_fpga/build/vivado/fz3b/reports/utilization_hier.rpt
+| Design       : qcnn_zu_wrapper
+| Device       : xazu3eg-sfvc784-1-i
+| Speed File   : -1
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++--------------------------------------------------------+-------------------------------------------------+------------+------------+---------+------+------+--------+--------+------+------------+
+|                        Instance                        |                      Module                     | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | URAM | DSP Blocks |
++--------------------------------------------------------+-------------------------------------------------+------------+------------+---------+------+------+--------+--------+------+------------+
+| qcnn_zu_wrapper                                        |                                           (top) |      10946 |      10194 |     570 |  182 | 8768 |     12 |     35 |    0 |        104 |
+|   qcnn_zu_i                                            |                                         qcnn_zu |      10946 |      10194 |     570 |  182 | 8768 |     12 |     35 |    0 |        104 |
+|     temp_link                                          |                             qcnn_zu_temp_link_0 |       7110 |       7037 |      26 |   47 | 2670 |     10 |     35 |    0 |        104 |
+|       inst                                             |             qcnn_zu_temp_link_0_axis_frame_link |       7110 |       7037 |      26 |   47 | 2670 |     10 |     35 |    0 |        104 |
+|         u_core                                         |                   qcnn_zu_temp_link_0_qcnn_core |       7084 |       7013 |      24 |   47 | 2646 |     10 |     35 |    0 |        104 |
+|     sc_mem                                             |                                qcnn_zu_sc_mem_0 |       1931 |       1376 |     536 |   19 | 3445 |      0 |      0 |    0 |          0 |
+|       inst                                             |                        qcnn_zu_sc_mem_0_bd_7ccc |       1931 |       1376 |     536 |   19 | 3445 |      0 |      0 |    0 |          0 |
+|         m00_exit_pipeline                              |   qcnn_zu_sc_mem_0_m00_exit_pipeline_imp_UJSKSM |        292 |        280 |       0 |   12 |  826 |      0 |      0 |    0 |          0 |
+|         m00_nodes                                      |           qcnn_zu_sc_mem_0_m00_nodes_imp_H963XM |        649 |        378 |     270 |    1 |  721 |      0 |      0 |    0 |          0 |
+|         s00_entry_pipeline                             | qcnn_zu_sc_mem_0_s00_entry_pipeline_imp_1TTBY9X |        150 |        150 |       0 |    0 |  268 |      0 |      0 |    0 |          0 |
+|         s00_nodes                                      |          qcnn_zu_sc_mem_0_s00_nodes_imp_1WYLEFZ |        300 |        172 |     128 |    0 |  326 |      0 |      0 |    0 |          0 |
+|         s01_entry_pipeline                             |  qcnn_zu_sc_mem_0_s01_entry_pipeline_imp_WT6QOH |        170 |        165 |       0 |    5 |  302 |      0 |      0 |    0 |          0 |
+|         s01_nodes                                      |           qcnn_zu_sc_mem_0_s01_nodes_imp_S62Y3T |        359 |        221 |     138 |    0 |  532 |      0 |      0 |    0 |          0 |
+|         switchboards                                   |       qcnn_zu_sc_mem_0_switchboards_imp_14X8SI3 |          0 |          0 |       0 |    0 |  440 |      0 |      0 |    0 |          0 |
+|     sc_reg                                             |                                qcnn_zu_sc_reg_0 |        529 |        529 |       0 |    0 |  635 |      0 |      0 |    0 |          0 |
+|       inst                                             |                        qcnn_zu_sc_reg_0_bd_bc79 |        529 |        529 |       0 |    0 |  635 |      0 |      0 |    0 |          0 |
+|         sc_ul                                          |                qcnn_zu_sc_reg_0_bd_bc79_sc_ul_0 |        529 |        529 |       0 |    0 |  635 |      0 |      0 |    0 |          0 |
+|     temp_dma                                           |                              qcnn_zu_temp_dma_0 |       1363 |       1240 |       8 |  115 | 1985 |      2 |      0 |    0 |          0 |
+|       U0                                               |                      qcnn_zu_temp_dma_0_axi_dma |       1363 |       1240 |       8 |  115 | 1985 |      2 |      0 |    0 |          0 |
+|         INCLUDE_MM2S_SOF_EOF_GENERATOR.I_MM2S_DMA_MNGR |            qcnn_zu_temp_dma_0_axi_dma_mm2s_mngr |         15 |         15 |       0 |    0 |   76 |      0 |      0 |    0 |          0 |
+|         INCLUDE_S2MM_SOF_EOF_GENERATOR.I_S2MM_DMA_MNGR |            qcnn_zu_temp_dma_0_axi_dma_s2mm_mngr |         29 |         29 |       0 |    0 |  104 |      0 |      0 |    0 |          0 |
+|         I_AXI_DMA_REG_MODULE                           |           qcnn_zu_temp_dma_0_axi_dma_reg_module |        154 |        154 |       0 |    0 |  267 |      0 |      0 |    0 |          0 |
+|         I_PRMRY_DATAMOVER                              |                qcnn_zu_temp_dma_0_axi_datamover |       1150 |       1027 |       8 |  115 | 1500 |      2 |      0 |    0 |          0 |
++--------------------------------------------------------+-------------------------------------------------+------------+------------+---------+------+------+--------+--------+------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+
