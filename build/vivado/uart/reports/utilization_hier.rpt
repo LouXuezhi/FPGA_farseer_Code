@@ -1,0 +1,79 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2026.1 (lin64) Build 6511674 Tue Jun 16 11:01:26 MDT 2026
+| Date         : Fri Sep 18 14:36:15 2026
+| Host         : LouLinux running 64-bit Ubuntu 22.04.5 LTS
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file /home/louxuezhi/Project/fiber_speckle_fpga/build/vivado/uart/reports/utilization_hier.rpt
+| Design       : top_pynq_z2_uart
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Routed
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++-------------------------------------+---------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+|               Instance              |              Module             | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | DSP Blocks |
++-------------------------------------+---------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+| top_pynq_z2_uart                    |                           (top) |       7347 |       7277 |      30 |   40 | 2839 |     12 |     34 |        104 |
+|   (top_pynq_z2_uart)                |                           (top) |          1 |          1 |       0 |    0 |    5 |      0 |      0 |          0 |
+|   u_link                            |                 uart_frame_link |       7347 |       7277 |      30 |   40 | 2834 |     12 |     34 |        104 |
+|     u_uart                          |                            uart |        122 |        122 |       0 |    0 |   77 |      0 |      0 |          0 |
+|       uart_rx_inst                  |                         uart_rx |         52 |         52 |       0 |    0 |   43 |      0 |      0 |          0 |
+|       uart_tx_inst                  |                         uart_tx |         70 |         70 |       0 |    0 |   34 |      0 |      0 |          0 |
+|     u_core                          |                       qcnn_core |       7187 |       7123 |      24 |   40 | 2649 |     11 |     34 |        104 |
+|       (u_core)                      |                       qcnn_core |        140 |        140 |       0 |    0 |    0 |      0 |      0 |          0 |
+|       u_conv0                       |                 qcnn_conv_layer |       1002 |        993 |       0 |    9 |  617 |      6 |      0 |          4 |
+|         (u_conv0)                   |                 qcnn_conv_layer |        970 |        961 |       0 |    9 |  560 |      0 |      0 |          4 |
+|       u_conv1                       | qcnn_conv_layer__parameterized0 |       1833 |       1822 |       0 |   11 |  700 |      3 |      0 |         33 |
+|         (u_conv1)                   | qcnn_conv_layer__parameterized0 |        919 |        908 |       0 |   11 |  465 |      0 |      0 |         33 |
+|       u_conv2                       | qcnn_conv_layer__parameterized1 |       2981 |       2971 |       0 |   10 |  711 |      1 |      1 |         32 |
+|         (u_conv2)                   | qcnn_conv_layer__parameterized1 |       1004 |        994 |       0 |   10 |  520 |      0 |      0 |         32 |
+|         g_lane_rom[0].u_weight_rom  |  qcnn_sync_rom__parameterized39 |         56 |         56 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[10].u_weight_rom |  qcnn_sync_rom__parameterized49 |         68 |         68 |       0 |    0 |    7 |      0 |      0 |          0 |
+|         g_lane_rom[11].u_weight_rom |  qcnn_sync_rom__parameterized50 |         76 |         76 |       0 |    0 |    8 |      0 |      0 |          0 |
+|         g_lane_rom[12].u_weight_rom |  qcnn_sync_rom__parameterized51 |         69 |         69 |       0 |    0 |    7 |      0 |      0 |          0 |
+|         g_lane_rom[13].u_weight_rom |  qcnn_sync_rom__parameterized52 |         65 |         65 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[14].u_weight_rom |  qcnn_sync_rom__parameterized53 |         55 |         55 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[15].u_weight_rom |  qcnn_sync_rom__parameterized54 |         66 |         66 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[16].u_weight_rom |  qcnn_sync_rom__parameterized55 |         65 |         65 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[17].u_weight_rom |  qcnn_sync_rom__parameterized56 |         54 |         54 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[18].u_weight_rom |  qcnn_sync_rom__parameterized57 |         57 |         57 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[19].u_weight_rom |  qcnn_sync_rom__parameterized58 |         59 |         59 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[1].u_weight_rom  |  qcnn_sync_rom__parameterized40 |         65 |         65 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[20].u_weight_rom |  qcnn_sync_rom__parameterized59 |         60 |         60 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[21].u_weight_rom |  qcnn_sync_rom__parameterized60 |         55 |         55 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[22].u_weight_rom |  qcnn_sync_rom__parameterized61 |         77 |         77 |       0 |    0 |    7 |      0 |      0 |          0 |
+|         g_lane_rom[23].u_weight_rom |  qcnn_sync_rom__parameterized62 |         64 |         64 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[24].u_weight_rom |  qcnn_sync_rom__parameterized63 |         68 |         68 |       0 |    0 |    7 |      0 |      0 |          0 |
+|         g_lane_rom[25].u_weight_rom |  qcnn_sync_rom__parameterized64 |         55 |         55 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[26].u_weight_rom |  qcnn_sync_rom__parameterized65 |         71 |         71 |       0 |    0 |    7 |      0 |      0 |          0 |
+|         g_lane_rom[27].u_weight_rom |  qcnn_sync_rom__parameterized66 |         51 |         51 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[28].u_weight_rom |  qcnn_sync_rom__parameterized67 |         64 |         64 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[29].u_weight_rom |  qcnn_sync_rom__parameterized68 |         76 |         76 |       0 |    0 |    7 |      0 |      0 |          0 |
+|         g_lane_rom[2].u_weight_rom  |  qcnn_sync_rom__parameterized41 |         56 |         56 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[30].u_weight_rom |  qcnn_sync_rom__parameterized69 |         59 |         59 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[31].u_weight_rom |  qcnn_sync_rom__parameterized70 |         59 |         59 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[3].u_weight_rom  |  qcnn_sync_rom__parameterized42 |         55 |         55 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[4].u_weight_rom  |  qcnn_sync_rom__parameterized43 |         62 |         62 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[5].u_weight_rom  |  qcnn_sync_rom__parameterized44 |         55 |         55 |       0 |    0 |    5 |      0 |      0 |          0 |
+|         g_lane_rom[6].u_weight_rom  |  qcnn_sync_rom__parameterized45 |         65 |         65 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[7].u_weight_rom  |  qcnn_sync_rom__parameterized46 |         64 |         64 |       0 |    0 |    7 |      0 |      0 |          0 |
+|         g_lane_rom[8].u_weight_rom  |  qcnn_sync_rom__parameterized47 |         56 |         56 |       0 |    0 |    6 |      0 |      0 |          0 |
+|         g_lane_rom[9].u_weight_rom  |  qcnn_sync_rom__parameterized48 |         55 |         55 |       0 |    0 |    5 |      0 |      0 |          0 |
+|       u_conv3                       | qcnn_conv_layer__parameterized2 |        947 |        937 |       0 |   10 |  529 |      0 |     33 |         34 |
+|         (u_conv3)                   | qcnn_conv_layer__parameterized2 |        946 |        936 |       0 |   10 |  526 |      0 |      0 |         34 |
+|       u_head                        |                       qcnn_head |        180 |        156 |      24 |    0 |   79 |      0 |      0 |          1 |
+|       u_loader                      |               qcnn_frame_loader |        187 |        187 |       0 |    0 |   13 |      1 |      0 |          0 |
+|         (u_loader)                  |               qcnn_frame_loader |        186 |        186 |       0 |    0 |   13 |      0 |      0 |          0 |
++-------------------------------------+---------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+
