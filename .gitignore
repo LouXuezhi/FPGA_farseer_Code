@@ -15,3 +15,5 @@ build/vivado/*/project/
 *.jou
 *.log
 __pycache__/
+build/hls4ml/project*/
+*.bin
