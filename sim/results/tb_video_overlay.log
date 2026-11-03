@@ -1,0 +1,8 @@
+captured frame_ui.rgb: 384000 pixels, 480 lines
+800x480: bg 480 lines (0 late), camera 240 lines (0 late)
+captured frame_720.rgb: 921600 pixels, 720 lines
+PASS: 0 errors, frames counted 5
+- ./sim/rtl/tb_video_overlay.v:177: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.052 2026-09-05
+- Verilator: $finish at 98ms; walltime 6.548 s; speed 14.924 ms/s
+- Verilator: cpu 6.502 s on 1 threads; allocated 4 MB

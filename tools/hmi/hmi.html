@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FZ3B 散斑测温 · 上位机</title>
+<style>
+:root{--bg:#0b0f14;--panel:#121821;--line:#263040;--ink:#e6edf3;--dim:#8b949e;--accent:#39c5cf;--ok:#3fb950;--warn:#f0b429;--bad:#f85149;--ref:#c9d1d9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB",sans-serif}
+header{display:flex;align-items:center;gap:18px;padding:12px 22px;border-bottom:1px solid var(--line);background:#0e141c;position:sticky;top:0;z-index:2}
+header h1{font-size:17px;margin:0;font-weight:700;display:flex;align-items:center;gap:10px}
+header h1:before{content:"";width:4px;height:18px;border-radius:2px;background:var(--accent)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.warn{background:var(--warn)}
+.spacer{flex:1}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+main{padding:18px 22px 40px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;max-width:1500px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card h2{margin:0 0 12px;font-size:13px;font-weight:700;color:var(--dim);letter-spacing:.06em;display:flex;align-items:center;gap:10px}
+.span12{grid-column:span 12}.span8{grid-column:span 8}.span4{grid-column:span 4}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.kpi .k{font-size:12px;color:var(--dim)}.kpi .v{font-size:24px;font-weight:700;margin-top:4px}
+.kpi .s{font-size:11px;color:var(--dim);margin-top:2px}
+.grid9{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.sc{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#0f151d;cursor:pointer;transition:border-color .15s}
+.sc:hover{border-color:#3a4a60}.sc.sel{border-color:var(--accent)}.sc.alarm{border-color:var(--bad);background:#1a1012}
+.sc .name{display:flex;justify-content:space-between;align-items:baseline}
+.sc .name b{color:var(--accent);font-size:15px}.sc .name span{color:var(--dim);font-size:11px}
+.sc .row{display:flex;justify-content:space-between;margin-top:6px;font-size:13px}
+.sc .big{font-size:22px;font-weight:700}
+.sc .ref{color:var(--ref)}.sc .err{font-size:12px}
+canvas{width:100%;height:300px;display:block}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--dim)}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+button{border:1px solid var(--line);background:#16202c;color:var(--ink);border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--accent)}button.primary{background:var(--accent);color:#06222a;border-color:var(--accent);font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.log{height:210px;overflow:auto;font:12px ui-monospace,Menlo,monospace;color:#b0bac6;background:#0b1016;border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--dim);font-weight:600}
+.note{font-size:12px;color:var(--dim);line-height:1.6}
+.badge{font-size:11px;padding:2px 8px;border-radius:6px;background:#3a2c0b;color:var(--warn);border:1px solid #5c4612}
+@media(max-width:1100px){.span8,.span4{grid-column:span 12}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+  <h1>多模光纤散斑测温 · 上位机</h1>
+  <span class="pill"><span id="d_mqtt" class="dot"></span><span id="t_mqtt">MQTT</span></span>
+  <span class="pill"><span id="d_node" class="dot"></span><span id="t_node">节点</span></span>
+  <span class="pill"><span id="d_ref" class="dot"></span><span id="t_ref">参考温度</span></span>
+  <span id="demo" class="badge" style="display:none">DEMO 权重：推理核未训练</span>
+  <span class="spacer"></span>
+  <span class="mono" id="clock" style="color:var(--dim)"></span>
+</header>
+<main>
+  <section class="card span12">
+    <div class="kpis">
+      <div class="kpi"><div class="k">推理步数</div><div class="v mono" id="k_step">—</div><div class="s" id="k_step_s">—</div></div>
+      <div class="kpi"><div class="k">帧间隔 dt</div><div class="v mono" id="k_dt">—</div><div class="s">参考帧 → 当前帧</div></div>
+      <div class="kpi"><div class="k">QCNN（PL）</div><div class="v mono" id="k_qcnn">—</div><div class="s">一次 DMA 推理</div></div>
+      <div class="kpi"><div class="k">预处理（PS）</div><div class="v mono" id="k_pre">—</div><div class="s">规范 7.2 → 2×56²</div></div>
+      <div class="kpi"><div class="k">平均误差 |FPGA − 参考|</div><div class="v mono" id="k_err">—</div><div class="s" id="k_err_s">已标定通道</div></div>
+    </div>
+  </section>
+
+  <section class="card span8">
+    <h2>9 路反馈点 · FPGA 散斑测温 vs 热电偶参考 <span class="spacer"></span><span style="font-weight:400">点卡片看曲线</span></h2>
+    <div class="grid9" id="cards"></div>
+  </section>
+
+  <section class="card span4">
+    <h2>标定</h2>
+    <div class="note">散斑模型输出的是温度<b>变化量</b> ΔT。标定把当前热电偶读数发给板子作为起点（MQTT <span class="mono">cmd/calibrate</span>），之后板子只靠散斑累加 ΔT 跟踪温度。参考值来自 8877 采集页，不占用串口。</div>
+    <div class="row2" style="margin:12px 0">
+      <button class="primary" id="b_all" onclick="cal(null)">全部标定</button>
+      <button id="b_one" onclick="cal(sel)">只标定所选</button>
+    </div>
+    <div id="cal_msg" class="note"></div>
+    <table style="margin-top:8px"><thead><tr><th>时间</th><th>通道</th><th>距今</th></tr></thead><tbody id="cal_tab"></tbody></table>
+  </section>
+
+  <section class="card span8">
+    <h2><span id="c_title">S7 · 温度曲线</span><span class="spacer"></span>
+      <span class="legend"><span><i style="background:var(--accent)"></i>FPGA（散斑 ΔT 累加）</span><span><i style="background:var(--ref)"></i>热电偶参考</span><span><i style="background:var(--warn)"></i>标定</span></span></h2>
+    <canvas id="chart" width="1000" height="300"></canvas>
+    <div class="note" id="c_note"></div>
+  </section>
+
+  <section class="card span4">
+    <h2>报警与日志</h2>
+    <table><thead><tr><th>时间</th><th>报警通道</th></tr></thead><tbody id="al_tab"></tbody></table>
+    <div class="log" id="log" style="margin-top:12px"></div>
+  </section>
+</main>
+<script>
+let S = null, sel = 0;
+const fmt = (v, n = 2) => v == null || isNaN(v) ? "—" : Number(v).toFixed(n);
+const hms = t => new Date(t * 1000).toLocaleTimeString("zh-CN", {hour12: false});
+function dot(id, cls, text, tid) { document.getElementById(id).className = "dot " + cls; document.getElementById(tid).textContent = text; }
+
+async function tick() {
+  try { S = await (await fetch("/api/snapshot")).json(); } catch (e) { dot("d_mqtt", "bad", "上位机断开", "t_mqtt"); return; }
+  document.getElementById("clock").textContent = hms(S.now);
+  dot("d_mqtt", S.connected ? "ok" : "bad", "MQTT " + (S.connected ? "已连接 " + S.broker : "未连接"), "t_mqtt");
+  const fresh = S.state_age != null && S.state_age < 5;
+  dot("d_node", S.status === "online" && fresh ? "ok" : S.status === "online" ? "warn" : "bad",
+      "节点 " + (S.status === "online" ? (fresh ? "在线" : "在线 · 无数据 " + fmt(S.state_age, 0) + "s") : S.status === "offline" ? "离线" : "未知"), "t_node");
+  dot("d_ref", S.ref && S.ref_age < 5 ? "ok" : "bad", S.ref && S.ref_age < 5 ? "参考温度 在线" : (S.ref_err || "参考温度 无"), "t_ref");
+  const st = S.state || {};
+  document.getElementById("demo").style.display = st.demo === false ? "none" : (S.state ? "" : "none");
+  document.getElementById("k_step").textContent = st.step ?? "—";
+  document.getElementById("k_step_s").textContent = S.state ? "最近 " + fmt(S.state_age, 1) + " s 前" : "等待节点";
+  document.getElementById("k_dt").textContent = st.dt != null ? fmt(st.dt, 2) + " s" : "—";
+  document.getElementById("k_qcnn").textContent = st.ms ? fmt(st.ms.qcnn, 2) + " ms" : "—";
+  document.getElementById("k_pre").textContent = st.ms ? fmt(st.ms.pre, 0) + " ms" : "—";
+  cards(st); chart(); tables();
+}
+
+function cards(st) {
+  const T = st.T || [], dT = st.dT || [], al = st.alarm || [], R = S.ref || [];
+  let errs = [];
+  document.getElementById("cards").innerHTML = S.sensors.map((s, k) => {
+    const e = T[k] != null && R[k] != null ? T[k] - R[k] : null; if (e != null) errs.push(Math.abs(e));
+    return `<div class="sc ${k === sel ? "sel" : ""} ${al[k] ? "alarm" : ""}" onclick="sel=${k};tick()">
+      <div class="name"><b>S${s}</b><span>H${S.heaters[k]} · ${al[k] ? "▲ 报警" : T[k] == null ? "未标定" : "正常"}</span></div>
+      <div class="row"><span class="big mono">${fmt(T[k])} °C</span><span class="ref mono">参考 ${fmt(R[k])}</span></div>
+      <div class="row"><span class="mono" style="color:var(--dim)">ΔT ${dT[k] == null ? "—" : (dT[k] >= 0 ? "+" : "") + fmt(dT[k], 3)}</span>
+      <span class="err mono" style="color:${e == null ? "var(--dim)" : Math.abs(e) > 1 ? "var(--bad)" : Math.abs(e) > 0.3 ? "var(--warn)" : "var(--ok)"}">误差 ${e == null ? "—" : (e >= 0 ? "+" : "") + fmt(e)}</span></div></div>`;
+  }).join("");
+  document.getElementById("k_err").textContent = errs.length ? fmt(errs.reduce((a, b) => a + b, 0) / errs.length, 2) + " °C" : "—";
+  document.getElementById("k_err_s").textContent = errs.length + " / 9 路已标定";
+  document.getElementById("b_one").textContent = "只标定 S" + S.sensors[sel];
+}
+
+function chart() {
+  const c = document.getElementById("chart"), g = c.getContext("2d");
+  const W = c.width = c.clientWidth * devicePixelRatio, H = c.height = 300 * devicePixelRatio; g.scale(devicePixelRatio, devicePixelRatio);
+  const w = W / devicePixelRatio, h = 300, L = 48, Rm = 12, T0 = 12, B = 26;
+  g.clearRect(0, 0, w, h);
+  document.getElementById("c_title").textContent = "S" + S.sensors[sel] + " · 温度曲线（最近 15 分钟）";
+  const pts = S.hist.map(([t, T, R]) => [t, T ? T[sel] : null, R ? R[sel] : null]);
+  const vals = pts.flatMap(p => [p[1], p[2]]).filter(v => v != null);
+  if (!vals.length) { g.fillStyle = "#8b949e"; g.font = "13px sans-serif"; g.fillText("等待数据：节点上线并标定后出现曲线", L, h / 2); document.getElementById("c_note").textContent = ""; return; }
+  let lo = Math.min(...vals), hi = Math.max(...vals); if (hi - lo < 1) { const m = (hi + lo) / 2; lo = m - 0.5; hi = m + 0.5; }
+  const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+  const t1 = S.now, t0 = t1 - 900, X = t => L + (t - t0) / (t1 - t0) * (w - L - Rm), Y = v => T0 + (hi - v) / (hi - lo) * (h - T0 - B);
+  g.strokeStyle = "#263040"; g.fillStyle = "#8b949e"; g.font = "11px ui-monospace,Menlo,monospace"; g.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(w - Rm, y); g.stroke(); g.fillText(v.toFixed(1), 6, y + 4); }
+  for (let m = 0; m <= 15; m += 5) { const x = X(t1 - m * 60); g.fillText(m ? "-" + m + "min" : "now", x - 16, h - 8); }
+  for (const c of S.calibrations) if ((c.which == null || c.which === sel) && c.t > t0) {
+    const x = X(c.t); g.strokeStyle = "#f0b429"; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(x, T0); g.lineTo(x, h - B); g.stroke(); g.setLineDash([]);
+  }
+  for (const [idx, col] of [[2, "#c9d1d9"], [1, "#39c5cf"]]) {
+    g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); let on = false;
+    for (const p of pts) { if (p[idx] == null) { on = false; continue; } const x = X(p[0]), y = Y(p[idx]); on ? g.lineTo(x, y) : g.moveTo(x, y); on = true; }
+    g.stroke();
+  }
+  const last = pts.filter(p => p[1] != null && p[2] != null).slice(-60);
+  const rms = last.length ? Math.sqrt(last.reduce((a, p) => a + (p[1] - p[2]) ** 2, 0) / last.length) : null;
+  document.getElementById("c_note").textContent = rms == null ? "" : "最近 " + last.length + " 个点 RMS 误差 " + fmt(rms, 3) + " °C";
+}
+
+function tables() {
+  document.getElementById("cal_tab").innerHTML = S.calibrations.slice(0, 8).map(c =>
+    `<tr><td class="mono">${hms(c.t)}</td><td>${c.which == null ? "全部" : "S" + S.sensors[c.which]}</td><td class="mono">${fmt((S.now - c.t) / 60, 1)} min</td></tr>`).join("") || `<tr><td colspan="3" style="color:var(--dim)">还没有标定</td></tr>`;
+  document.getElementById("al_tab").innerHTML = S.alarms.slice(0, 6).map(a =>
+    `<tr><td class="mono">${hms(a.t)}</td><td style="color:${a.on.length ? "var(--bad)" : "var(--ok)"}">${a.on.length ? a.on.map(s => "S" + s).join(" ") : "全部解除"}</td></tr>`).join("") || `<tr><td colspan="2" style="color:var(--dim)">无报警</td></tr>`;
+  const lg = document.getElementById("log"); const atEnd = lg.scrollTop + lg.clientHeight >= lg.scrollHeight - 4;
+  lg.textContent = S.log.join("\n"); if (atEnd) lg.scrollTop = lg.scrollHeight;
+}
+
+async function cal(k) {
+  const r = await (await fetch("/api/calibrate", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({index: k})})).json();
+  document.getElementById("cal_msg").innerHTML = r.ok ? `<span style="color:var(--ok)">已发送</span> · ${r.T.map((v, i) => v == null ? "" : "S" + S.sensors[i] + " " + fmt(v)).filter(Boolean).join("  ")}` : `<span style="color:var(--bad)">${r.msg}</span>`;
+  tick();
+}
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

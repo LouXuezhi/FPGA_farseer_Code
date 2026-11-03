@@ -1,0 +1,9 @@
+LAYER 0 frame-0 map: 12544/12544 match
+LAYER 1 frame-0 map: 6272/6272 match
+LAYER 2 frame-0 map: 3136/3136 match
+LAYER 3 frame-0 map: 1024/1024 match
+RESULT 144/144 match (16 frames x 9 outputs), first frame 1117 us, then 565 us/frame
+- ./sim/rtl/tb_qcnn_core.v:62: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.052 2026-09-05
+- Verilator: $finish at 10ms; walltime 0.491 s; speed 19.556 ms/s
+- Verilator: cpu 0.477 s on 1 threads; allocated 3 MB

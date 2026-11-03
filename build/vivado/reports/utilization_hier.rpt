@@ -1,0 +1,53 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2026.1 (lin64) Build 6511674 Tue Jun 16 11:01:26 MDT 2026
+| Date         : Wed Nov  4 02:28:06 2026
+| Host         : build-host running 64-bit Ubuntu 22.04.5 LTS
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file <repo>/build/vivado/fsf_fz3b/reports/utilization_hier.rpt
+| Design       : fz3b_cam_top
+| Device       : xczu3eg-sfvc784-1-i
+| Speed File   : -1
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++------------------------------------------+------------------------------------+------------+------------+---------+------+-------+--------+--------+------+------------+
+|                 Instance                 |               Module               | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | URAM | DSP Blocks |
++------------------------------------------+------------------------------------+------------+------------+---------+------+-------+--------+--------+------+------------+
+| fz3b_cam_top                             |                              (top) |      20322 |      19277 |     738 |  307 | 20041 |     34 |     39 |    0 |        108 |
+|   (fz3b_cam_top)                         |                              (top) |         35 |         35 |       0 |    0 |  2263 |      0 |      0 |    0 |          0 |
+|   bd                                     |                     cam_bd_wrapper |      19604 |      18575 |     722 |  307 | 17150 |     30 |     39 |    0 |        108 |
+|     (bd)                                 |                     cam_bd_wrapper |        312 |        312 |       0 |    0 |     0 |      0 |      0 |    0 |          0 |
+|     cam_bd_i                             |                             cam_bd |      19292 |      18263 |     722 |  307 | 17150 |     30 |     39 |    0 |        108 |
+|       vdma                               |                      cam_bd_vdma_0 |       1419 |       1311 |       8 |  100 |  2187 |      8 |      1 |    0 |          0 |
+|         U0                               |             cam_bd_vdma_0_axi_vdma |       1419 |       1311 |       8 |  100 |  2187 |      8 |      1 |    0 |          0 |
+|       ovl                                |                       cam_bd_ovl_0 |       1757 |       1739 |       0 |   18 |  1627 |      9 |      3 |    0 |          4 |
+|         inst                             |     cam_bd_ovl_0_video_overlay_top |       1757 |       1739 |       0 |   18 |  1627 |      9 |      3 |    0 |          4 |
+|       sc_mem                             |                    cam_bd_sc_mem_0 |       3675 |       2979 |     670 |   26 |  5047 |      0 |      0 |    0 |          0 |
+|         inst                             |            cam_bd_sc_mem_0_bd_340c |       3675 |       2979 |     670 |   26 |  5047 |      0 |      0 |    0 |          0 |
+|       sc_reg                             |                    cam_bd_sc_reg_0 |        518 |        518 |       0 |    0 |   507 |      0 |      0 |    0 |          0 |
+|         inst                             |            cam_bd_sc_reg_0_bd_f4b9 |        518 |        518 |       0 |    0 |   507 |      0 |      0 |    0 |          0 |
+|       temp_dma                           |                  cam_bd_temp_dma_0 |       1364 |       1241 |       8 |  115 |  1985 |      2 |      0 |    0 |          0 |
+|         U0                               |          cam_bd_temp_dma_0_axi_dma |       1364 |       1241 |       8 |  115 |  1985 |      2 |      0 |    0 |          0 |
+|       temp_link                          |                 cam_bd_temp_link_0 |      10548 |      10465 |      36 |   47 |  5763 |     11 |     35 |    0 |        104 |
+|         inst                             | cam_bd_temp_link_0_axis_frame_link |      10548 |      10465 |      36 |   47 |  5763 |     11 |     35 |    0 |        104 |
+|   csi                                    |                       csi2_rx_lite |        128 |        112 |      16 |    0 |   115 |      0 |      0 |    0 |          0 |
+|   csi0                                   |                       csi2_l0_only |         64 |         64 |       0 |    0 |    67 |      0 |      0 |    0 |          0 |
+|   dphy                                   |                       dphy_comp_rx |        339 |        339 |       0 |    0 |   107 |      0 |      0 |    0 |          0 |
+|     al1                                  |                  dphy_lane_align_0 |        167 |        167 |       0 |    0 |    46 |      0 |      0 |    0 |          0 |
+|     al0                                  |                    dphy_lane_align |        173 |        173 |       0 |    0 |    46 |      0 |      0 |    0 |          0 |
+|   regs                                   |                           cam_regs |         27 |         27 |       0 |    0 |   144 |      0 |      0 |    0 |          0 |
+|   vfifo                                  |                     xpm_fifo_async |        127 |        127 |       0 |    0 |   195 |      4 |      0 |    0 |          0 |
+|     gnuram_async_fifo.xpm_fifo_base_inst |                      xpm_fifo_base |        127 |        127 |       0 |    0 |   195 |      4 |      0 |    0 |          0 |
++------------------------------------------+------------------------------------+------------+------------+---------+------+-------+--------+--------+------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

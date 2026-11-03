@@ -1,0 +1,4 @@
+SEG_ovl_reg0                             0xA0030000  0x0000010000
+SEG_M_REGS_Reg                           0xA0000000  0x0000010000
+SEG_temp_dma_Reg                         0xA0020000  0x0000010000
+SEG_vdma_Reg                             0xA0010000  0x0000010000

@@ -1,0 +1,19 @@
+PASS spike: lone +0.6 outlier never shown
+PASS spike: 0.3/step ramp passes undelayed
+PASS spike: real step shown one sample late
+PASS spike: alarm channel bypasses the hold
+PASS quantiser: noisy 36.95 toggles 4 times (plain rounding 96)
+PASS quantiser: real change follows
+PASS status: alarm shown on the first flagged step
+PASS status: alarm held 15 s after the flag clears
+PASS status: alarm released after hold
+PASS status: rate flickering around 1.0 stays normal (nnnnnn)
+PASS status: sustained rise shown, 0.8 keeps it, clears after 8 s below 0.6 (nnwwwwwwwwwnn)
+PASS axis: (35.0, 39.0) -> grow (35.0, 42.0) -> hold (35.0, 42.0) -> shrink (35.0, 39.0)
+PASS eased: 36 -> 37 glides (36.22 at 0.2 s, 36.976 at 3 s)
+PASS eased: re-calibration jump applied at once
+PASS speckle: black frame and 2x exposure step gated
+PASS speckle: view unchanged across gated frames
+PASS speckle: persistent change accepted after 6 frames
+PASS speckle: frame-to-frame flicker 50.1 -> 26.6 (EMA)
+ALL PASS

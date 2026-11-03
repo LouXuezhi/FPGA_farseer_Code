@@ -1,0 +1,5 @@
+RESULT 72/72 match (data + tlast)
+- ./sim/rtl/tb_axis_frame_link.v:60: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.052 2026-09-05
+- Verilator: $finish at 5ms; walltime 0.281 s; speed 18.145 ms/s
+- Verilator: cpu 0.275 s on 1 threads; allocated 2 MB

@@ -1,0 +1,29 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version      : Vivado v.2026.1 (lin64) Build 6511674 Tue Jun 16 11:01:26 MDT 2026
+| Date              : Wed Nov  4 02:28:37 2026
+| Host              : build-host running 64-bit Ubuntu 22.04.5 LTS
+| Command           : report_cdc -file <repo>/build/vivado/fsf_fz3b/reports/cdc.rpt
+| Design            : fz3b_cam_top
+| Device            : xczu3eg-sfvc784
+| Speed File        : -1  PRODUCTION 1.31 12-08-2025
+| Design State      : Routed
+| Temperature Grade : I
+--------------------------------------------------------------------------------------------------------------------------------------------------
+
+CDC Report
+
+Severity  Source Clock          Destination Clock  CDC Type                 Exceptions               Endpoints  Safe  Unsafe  Unknown  No ASYNC_REG  
+--------  --------------------  -----------------  -----------------------  -----------------------  ---------  ----  ------  -------  ------------  
+Critical  clk_pl_0              byteclk            No Common Primary Clock  Asynch Clock Groups             44     9      11       24             7  
+Critical  byteclk               mipi_hs_clk        User Ignored             False Path                       2     0       2        0             0  
+Critical  clk_pl_0              mipi_hs_clk        No Common Primary Clock  Asynch Clock Groups              1     0       1        0             0  
+Critical  input port clock      mipi_hs_clk        No Common Primary Clock  False Path                       2     0       2        0             0  
+Warning   input port clock      byteclk            No Common Primary Clock  False Path                       4     4       0        0             4  
+Warning   clk_pl_0              clk24_u            No Common Primary Clock  Asynch Clock Groups              1     1       0        0             1  
+Warning   byteclk               clk_pl_0           No Common Primary Clock  Asynch Clock Groups            676   676       0        0             1  
+Warning   mipi_hs_clk           clk_pl_0           No Common Primary Clock  Asynch Clock Groups              1     1       0        0             0  
+Warning   vclk                  clk_pl_0           No Common Primary Clock  Max Delay Datapath Only         30    30       0        0             0  
+Warning   clk_pl_0              vclk               No Common Primary Clock  Max Delay Datapath Only        356   356       0        0             0  
+Info      mipi_hs_clk_DIV4_INV  byteclk            Safely Timed             None                            54    54       0        0             0  
+

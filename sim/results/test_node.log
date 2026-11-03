@@ -1,0 +1,31 @@
+PASS mqtt connect
+PASS mqtt 50 x QoS0 delivered in order
+PASS mqtt retained status
+PASS mqtt QoS1 acknowledged
+PASS mqtt inbound subscribe
+PASS mqtt keepalive (PINGREQ) keeps the link
+PASS mqtt notices broker loss
+PASS mqtt reconnect + queued QoS1 delivered
+PASS mqtt last will on unclean loss
+PASS mqtt bounded queue drops QoS0 first
+PASS QcnnDma dT shape (16, 9), 4 calls, matches RTL golden tv_output.mem
+PASS screen profile: sensor values at their x, clamped, invalid S2 skipped
+PASS screen text: card S1 shows 40.00 degC in alarm colour (' 40.00\x80C ')
+PASS screen: unchanged text is not rewritten (256 writes on repeat)
+PASS node calibrate via MQTT
+PASS node publishes one state per step
+PASS node accumulates dT into T
+PASS node draws the screen each step (profile + status line)
+     step latency ms: {'pre': 11.9, 'qcnn': 1.79, 'ovl': 0.56}
+PASS dp_live 720p mode -> overlay timing
+PASS dp_live 1080p mode -> overlay timing
+PASS dp_live refuses when the DP stream is off
+PASS dp_live points the preview at the VDMA frame stores
+PASS dp_live: video layer live/PL clock/ext timing, graphics hidden, gfx bits untouched
+PASS dp_live refuses 1080p (vclk timed for 720p)
+PASS dp_live 800x480 panel mode -> overlay timing
+PASS dp_live off restores PS clock / internal timing
+PASS win_fusion waits until window A is half full (first score at 150 s, >= 150)
+PASS win_fusion: steady pattern below threshold, changed pattern above
+PASS win_fusion: one alarm event per episode (1)
+ALL PASS

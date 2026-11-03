@@ -1,0 +1,5 @@
+2026-11-03 14:58:45
+4.14.0-xilinx-v2018.3
+3.6.9 1.13.3
+31a4d9982d48e2e9f950836f0b40212104c81f1b71676da8f23c12e5093c83e3  /lib/firmware/fz3b_cam.bin
+operating

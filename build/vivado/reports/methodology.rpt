@@ -1,0 +1,80 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2026.1 (lin64) Build 6511674 Tue Jun 16 11:01:26 MDT 2026
+| Date         : Wed Nov  4 02:28:55 2026
+| Host         : build-host running 64-bit Ubuntu 22.04.5 LTS
+| Command      : report_methodology -file <repo>/build/vivado/fsf_fz3b/reports/methodology.rpt
+| Design       : fz3b_cam_top
+| Device       : xczu3eg-sfvc784-1-i
+| Speed File   : -1
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: impl_1
+      Design limits: <entire design considered>
+             Max checks: <unlimited>
+             Checks found: 8
++-----------+----------+------------------------------------+--------+
+| Rule      | Severity | Description                        | Checks |
++-----------+----------+------------------------------------+--------+
+| LUTAR-1   | Warning  | LUT drives async reset alert       | 1      |
+| TIMING-9  | Warning  | Unknown CDC Logic                  | 1      |
+| TIMING-10 | Warning  | Missing property on synchronizer   | 1      |
+| TIMING-18 | Warning  | Missing input or output delay      | 2      |
+| TIMING-24 | Warning  | Overridden Max delay datapath only | 3      |
++-----------+----------+------------------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+LUTAR-1#1 Warning
+LUT drives async reset alert  
+LUT cell regs/bgdiv_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) dphy/bgdiv/CLR, dphy/rs_reg[0]/PRE, dphy/rs_reg[1]/PRE, dphy/rs_reg[2]/PRE
+dphy/rs_reg[3]/PRE. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+TIMING-9#1 Warning
+Unknown CDC Logic  
+One or more asynchronous Clock Domain Crossing has been detected between 2 clock domains through a set_false_path or a set_clock_groups or set_max_delay -datapath_only constraint but no double-registers logic synchronizer has been found on the side of the capture clock. It is recommended to run report_cdc for a complete and detailed CDC coverage. Please consider using XPM_CDC to avoid Critical severities
+Related violations: <none>
+
+TIMING-10#1 Warning
+Missing property on synchronizer  
+One or more logic synchronizer has been detected between 2 clock domains but the synchronizer does not have the property ASYNC_REG defined on one or both registers. It is recommended to run report_cdc for a complete and detailed CDC coverage
+Related violations: <none>
+
+TIMING-18#1 Warning
+Missing input or output delay  
+An output delay is missing on cam_pwdn_n relative to the rising and/or falling clock edge(s) of clk_pl_0.
+Related violations: <none>
+
+TIMING-18#2 Warning
+Missing input or output delay  
+An output delay is missing on cam_rst_n relative to the rising and/or falling clock edge(s) of clk_pl_0.
+Related violations: <none>
+
+TIMING-24#1 Warning
+Overridden Max delay datapath only  
+An asynchronous set_clock_groups or a set_false path (see constraint position 15 in the Timing Constraints window in Vivado IDE) between clocks byteclk and clk_pl_0 overrides a set_max_delay -datapath_only (position 12). It is not recommended to override a set_max_delay -datapath_only constraint. Replace the set_clock_groups or set_false_path between clocks with point-to-point set_false_path constraints
+Related violations: <none>
+
+TIMING-24#2 Warning
+Overridden Max delay datapath only  
+An asynchronous set_clock_groups or a set_false path (see constraint position 15 in the Timing Constraints window in Vivado IDE) between clocks byteclk and clk_pl_0 overrides a set_max_delay -datapath_only (position 78). It is not recommended to override a set_max_delay -datapath_only constraint. Replace the set_clock_groups or set_false_path between clocks with point-to-point set_false_path constraints
+Related violations: <none>
+
+TIMING-24#3 Warning
+Overridden Max delay datapath only  
+An asynchronous set_clock_groups or a set_false path (see constraint position 15 in the Timing Constraints window in Vivado IDE) between clocks clk_pl_0 and byteclk overrides a set_max_delay -datapath_only (position 76). It is not recommended to override a set_max_delay -datapath_only constraint. Replace the set_clock_groups or set_false_path between clocks with point-to-point set_false_path constraints
+Related violations: <none>
+
+
