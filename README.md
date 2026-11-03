@@ -114,8 +114,8 @@ fiber_speckle_thermo/
 ├── board/fz3b/        上板说明、预编译比特流、界面素材、相机服务、实测输出
 ├── tools/             界面素材生成（ui/）、上位机 MQTT 监视页（hmi/）
 ├── data/              测试数据与参考：定点模型、散斑样帧、公开数据集下载脚本
-├── skill/             技能包
-└── report/            设计报告、系统架构说明（architecture.md）与架构图（figures/）
+├── skill/             技能包：踩坑清单、校验脚本（scripts/）、提示词工作流（prompts/），换题目换板卡可用
+└── report/            设计报告、系统架构说明（architecture.md）与架构图（figures/）、大模型协作记录（llm_log/）
 ```
 
 各目录下有 `README.md` 说明文件作用和用法。
