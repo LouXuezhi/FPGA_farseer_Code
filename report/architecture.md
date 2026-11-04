@@ -2,11 +2,13 @@
 
 中文 | [English](architecture_en.md)
 
-图片在 `report/figures/`，与设计报告（`report/design_report.pdf`）第二部分的图一致。
+图片在 `report/figures/`，与设计报告（`report/design_report.pdf`）中的图一致。
 
 ## 1. 系统组成
 
 ![系统组成](figures/system_overview.png)
+
+![散斑测温原理](figures/speckle_principle.png)
 
 一根多模光纤绕在液冷管路上，光纤出射的散斑图样由 OV9281 相机采集，送入 EdgeBoard FZ3B（Zynq UltraScale+ ZU3EG）。
 板上完成采集、预处理、QCNN 推理、窗口融合报警、屏幕显示和 MQTT 上报，上位机只负责接收和展示。
@@ -46,6 +48,8 @@ PS 与推理核之间用 AXI DMA（PG021 simple mode）传输，驱动在 `src/h
 ## 6. 报警方法
 
 ![报警方法](figures/alarm_method.png)
+
+![两路得分分布](figures/fused_scores.png)
 
 QCNN 温升估计与两窗口块相关的 1 − 相关系数，按不加热对照数据标准化后以 1 : 0.1 加权，连续 3 次超过门限报警。
 训练与评估见 `src/model/win_alarm/README.md`，参数在 `data/fusion/fusion.json`。

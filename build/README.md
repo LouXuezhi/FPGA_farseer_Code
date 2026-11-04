@@ -26,16 +26,20 @@ FSF_CAM=1 FSF_VIDEO=1 vivado -mode batch -source build/vivado/build_fz3b.tcl
 
 产物写到 `build/vivado/fsf_fz3b/`（`.bit`、`.bin`、`.hwh`、`address_map.txt`、`reports/`）。本仓库已带一份构建结果：比特流在 `board/fz3b/prebuilt/`，报告在 `build/vivado/reports/`。
 
-## 实现结果（`vivado/reports/`，Vivado 2026.1，2026-11-03）
+## 实现结果（`vivado/reports/`，Vivado 2026.1，2026-11-04，训练权重）
 
 | 项 | 结果 |
 |---|---|
-| clk_pl_0 100 MHz（AXI、DMA、推理核、屏幕取数） | WNS +3.039 ns，WHS +0.012 ns，0 个失败端点 |
-| vclk（屏幕像素时钟，按 74.25 MHz 约束；800×480 实际约 33 MHz） | WNS +8.074 ns |
-| LUT / FF | 20238（28.7%） / 20014（14.2%） |
+| clk_pl_0 100 MHz（AXI、DMA、推理核、屏幕取数） | WNS +2.545 ns，WHS +0.005 ns，0 个失败端点 |
+| vclk（屏幕像素时钟，按 74.25 MHz 约束；800×480 实际约 33 MHz） | WNS +8.263 ns |
+| LUT / FF | 20322（28.8%） / 20041（14.2%） |
 | BRAM / DSP | 53.5（24.8%） / 108（30.0%） |
-| 其中推理核 + DMA 链路 | LUT 10470，BRAM 11 + 35，DSP 104 |
+| 其中推理核 + DMA 链路 | LUT 10548，BRAM 11 + 35，DSP 104 |
 | 片上功耗（估计） | 2.99 W |
+
+推理核优化前后与 hls4ml 的对比（XC7Z020，同一模型）：
+
+![PL 实现方案对比](../report/figures/pl_implementations.png)
 
 报告文件：`utilization.rpt`、`utilization_hier.rpt`、`timing_summary.rpt`、`power.rpt`、`cdc.rpt`、`methodology.rpt`。
 `cdc.rpt` 的 Critical 只在相机 D-PHY 域的配置寄存器；推理和显示路径没有。

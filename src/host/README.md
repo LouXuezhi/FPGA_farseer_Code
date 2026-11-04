@@ -52,4 +52,6 @@ python3 -E fsf_ps_ui.py --telemetry http://192.168.1.253:8877
 python fsf_ps_ui.py --shots ../../build/ui_ps --raw-npy ../../data/speckle_pair_2x800x640.npy   # Mac 上出预览图
 ```
 
+![散斑视图](../../report/figures/ui_speckle_view.png)
+
 板上实测（numpy 1.13，单核）：整页 70–125 ms，页面切换帧 23 ms，处理一帧散斑 11 ms；空闲 2 fps、数值过渡 6 fps、动画 20 fps，不影响 2 s 的推理步长。

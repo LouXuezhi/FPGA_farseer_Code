@@ -16,7 +16,19 @@ A multimode fiber is wound along a liquid-cooling pipe. A camera captures the sp
 
 ![System overview](report/figures/system_overview.png)
 
+![Speckle sensing principle](report/figures/speckle_principle.png)
+
+When a section of the fiber heats up, its refractive index and length change, so the optical path of every mode changes and the speckle pattern rearranges. Comparing how similar two speckle images are tells whether any part of the fiber is warming up.
+
+Labels inside the figures are in Chinese; each figure is explained in the text below it.
+
 ## Results
+
+### The difficulty: the speckle drifts even without heating
+
+![Drift without heating](report/figures/drift_no_heat.png)
+
+With all heaters off, two frames 60 s apart already have a correlation of only 0.6–0.7 while the probe temperatures barely change; this comes from fluctuations in the laser's wavelength and power. After averaging 60 s of frames, the correlation at the same interval recovers clearly. The alarm method is built on this observation, and its threshold is calibrated with no-heat control data.
 
 ### Alarm performance against other methods (same protocol)
 
@@ -34,6 +46,22 @@ A multimode fiber is wound along a liquid-cooling pipe. A camera captures the sp
 
 Detection is on par with the fine-tuned large models. The alarm delay is 2/5 of ResNet-18's, compute is 1/270 of ResNet-18 and 1/8 of MobileNetV3-S, and only this design runs in real time on the PL.
 
+![Method comparison](report/figures/method_comparison.png)
+
+### Alarms during an 80 min plateau session (held-out data)
+
+![Alarm episode](report/figures/alarm_episode.png)
+
+Top: probe temperatures of the heated channels. Bottom: alarm score. After each set-point increase the score crosses the threshold within about half a minute and raises an alarm; once the temperature holds steady, the score falls back below the threshold.
+
+| Detection rate by temperature rise | Alarm delay |
+|---|---|
+| ![Detection rate](report/figures/detection_by_rise.png) | ![Alarm delay](report/figures/alarm_delay.png) |
+
+Distribution of the two scores: the x-axis is window decorrelation 1 − r, the y-axis is the QCNN temperature-rise estimate. Hollow dots are no-heat controls; colored dots are heated segments, colored by the largest single-channel rise within 2 min. Controls cluster in the lower left, and larger rises move toward the upper right.
+
+![Two scores](report/figures/fused_scores.png)
+
 ### On-board inference
 
 | Implementation | Per frame | Speed-up of this work | Energy per inference |
@@ -42,6 +70,8 @@ Detection is on par with the fine-tuned large models. The alarm delay is 2/5 of 
 | Same QCNN on the A53, fixed-point | 33.5 ms | 25× | — |
 | Off-the-shelf networks on the A53 | 96–2668 ms | 70–2000× | — |
 | Desktop GPU running MNet-reg | — | — | 48 mJ |
+
+![On-board inference](report/figures/board_inference.png)
 
 ### Inference-core optimization (XC7Z020, same model)
 
@@ -54,6 +84,8 @@ Detection is on par with the fine-tuned large models. The alarm delay is 2/5 of 
 
 32× faster than the serial version. The hls4ml implementations need 2–4× the device's BRAM and cannot be placed.
 
+![PL implementations](report/figures/pl_implementations.png)
+
 ### Hardware metrics (FZ3B combined bitstream)
 
 | Metric | Value | Source |
@@ -65,6 +97,22 @@ Detection is on par with the fine-tuned large models. The alarm delay is 2/5 of 
 | On-chip power | 2.99 W (Vivado estimate) | same |
 | Camera capture | 640×800 at 149.8 fps; 320×400 at 299.0 fps | board measurement |
 | Display | 800×480 at 60 Hz, Mini DP | board measurement |
+
+### Test bench and dataset
+
+A self-built test bench with 9 independently heated sections. 37 sessions, about 95,000 frames in total. The third collection locks the camera exposure, takes the median of 5 frames per second, and adds 4 pure control sessions and 5 long-plateau sessions; the alarm method is trained and evaluated on 11 of its sessions (34,000 frames).
+
+![Test bench measurements](report/figures/test_bench.png)
+
+(a) One stepped temperature run covering 31.1–42.4 °C in 34 min; (b) 33 min with all heaters off: average single-channel reading fluctuation 0.049 °C.
+
+![Dataset timeline](report/figures/dataset_timeline.png)
+
+### Terminal UI
+
+7-inch touch screen rendered by the PS. The speckle page switches between raw, false-color and local-decorrelation views:
+
+![Speckle view](report/figures/ui_speckle_view.png)
 
 ## Reproduce
 

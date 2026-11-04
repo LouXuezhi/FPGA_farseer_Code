@@ -23,7 +23,13 @@ python src/model/qcnn_int.py data/fusion/qmodel_win.npz src/rtl/gen data/fusion/
 ./sim/rtl/run_verilator.sh tb_qcnn_core        # 144/144 逐位一致
 ```
 
+![报警方法](../../../report/figures/alarm_method.png)
+
 留出结果（`report/` 设计报告第三部分）：2 min 内单路升温 ≥1 °C 时 AUC 0.993、1% 误报下检出 92%，30/30 次升温事件报警，延迟中位 25 s；
 4 段对照共 1.5 h 误报 4 次，全部在同一段。
+
+![报警过程](../../../report/figures/alarm_episode.png)
+
+![方法对比](../../../report/figures/method_comparison.png)
 
 失效条件：门限依赖当前光路的漂移水平。换光纤、动过耦合或激光器状态变化后，先录 20–30 min 不加热的数据，按上表重新定门限（`fusion.json` 的 `mu`、`sd`、`threshold`）。

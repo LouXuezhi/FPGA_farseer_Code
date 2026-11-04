@@ -2,11 +2,13 @@
 
 [中文](architecture.md) | English
 
-Figures are in `report/figures/` and match those in part 2 of the design report (`report/design_report.pdf`). Labels inside the figures are in Chinese.
+Figures are in `report/figures/` and match those in the design report (`report/design_report.pdf`). Labels inside the figures are in Chinese.
 
 ## 1. System overview
 
 ![System overview](figures/system_overview.png)
+
+![Speckle sensing principle](figures/speckle_principle.png)
 
 A multimode fiber is wound along a liquid-cooling pipe. An OV9281 camera captures the speckle pattern at the fiber output and feeds it to an EdgeBoard FZ3B (Zynq UltraScale+ ZU3EG).
 The board performs capture, preprocessing, QCNN inference, windowed-fusion alarm, on-screen display and MQTT reporting; the host only receives and displays.
@@ -46,6 +48,8 @@ The 9 heaters and contact temperature probes of the test bench only create tempe
 ## 6. Alarm method
 
 ![Alarm method](figures/alarm_method.png)
+
+![Distribution of the two scores](figures/fused_scores.png)
 
 The QCNN temperature-rise estimate and the block-wise 1 − correlation between two windows are normalized with no-heat control data and combined with weights 1 : 0.1; an alarm is raised after 3 consecutive scores above the threshold.
 Training and evaluation: `src/model/win_alarm/README.md`; parameters: `data/fusion/fusion.json`.
