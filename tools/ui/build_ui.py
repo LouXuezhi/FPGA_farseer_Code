@@ -7,7 +7,7 @@ Outputs:
   src/rtl/video/heat_lut.mem, font12x24.mem     PL ROMs (synthesised)
   board/fz3b/ui/bg.bin, layout.json             loaded by fsf_ui.py on the board
   build/ui/bg_words.mem                         background for the testbench
-  build/ui/preview.png                          disp_ref.compose() with demo data:
+  build/ui/preview.png                          disp_ref.compose() with sample data:
                                                 bit-exact what the PL will output
 Text and panels are drawn by ui_text.py under the system Python (Pillow).
 """
@@ -177,7 +177,7 @@ def main():
     temps = [36.8, 37.4, 38.9, 41.6, 44.2, 43.1, 40.2, 38.0, 37.1]
     alarms = [False] * 4 + [True] + [False] * 4
     scr.show(temps, [True] * 9, alarms, [0.012, 0.018, 0.031, 0.064, 0.112, 0.081, 0.040, 0.022, 0.015],
-             dict(step=1284, dt=1.0, qcnn_ms=0.57, pre_ms=312, mqtt=True, demo=True, clock="23:59:59",
+             dict(step=1284, dt=1.0, qcnn_ms=0.57, pre_ms=312, mqtt=True, clock="23:59:59",
                   topic="fsf/fz3b/state", sent=1284, queued=0))
     prof = [scr.regs.mem.get(fsf_ui.PROF0 + 4 * i, 0) for i in range(256)]
     if a.cam:

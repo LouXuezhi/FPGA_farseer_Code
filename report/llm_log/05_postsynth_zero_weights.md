@@ -1,5 +1,7 @@
 # 05 RTL 仿真通过、综合后权重全为 0
 
+中文 | [English](05_postsynth_zero_weights_en.md)
+
 会话：QCNN 推理核前期验证（单帧形状，XC7Z020）　日期：2026-09-16（据当日结果记录 `results_2026-09-16`）
 
 ## 提示词（整理）

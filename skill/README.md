@@ -1,27 +1,27 @@
-# skill — 技能包 Skills
+# skill — 技能包
+
+中文 | [English](README_en.md)
 
 从开发过程中提炼、**换题目、换板卡仍可用**的经验。脚本不读本作品的文件，给路径就能用。
-Lessons from this project that **still apply to other topics and boards**. Scripts take paths as arguments and read nothing from this project.
 
-## 通用性实测 Portability (tested)
+## 通用性实测
 
 `./skill/tests/run_tests.sh` 用另一块板的真实构建产物自测（样例在 `skill/tests/samples/`），15 项全部通过。
-Self-test on real build outputs from a different board (samples in `skill/tests/samples/`): 15/15 pass.
 
-| 技能 Skill | Zynq-7000 xc7z020（PYNQ-Z2 级）| ZynqMP xczu3eg（本作品）| Vivado 版本 versions | 依赖 Deps |
+| 技能 | Zynq-7000 xc7z020（PYNQ-Z2 级） | ZynqMP xczu3eg（本作品） | Vivado 版本 | 依赖 |
 |---|---|---|---|---|
-| 6 `hwh_map.py` | 已测 tested | 已测 tested | 2025.1 / 2026.1 | 标准库 stdlib，Python ≥3.5 |
-| 7 `check_vivado_reports.py` | 已测 tested | 已测 tested | 2017.4 / 2025.1 / 2026.1 | 标准库 stdlib |
-| 1 `compare_golden.py` | 与器件无关 device-independent | 已测 tested | — | numpy |
-| 3 AXI DMA 驱动踩坑 | 未上板；寄存器偏移相同（PG021），按 `.hwh` 换基地址即可 not run; same PG021 offsets | 已测 tested | — | numpy |
-| 4 DRM 显示模式 | 不适用（无 DPSUB） N/A | 已测 tested | — | 标准库 stdlib |
-| 2、5、8 | 与器件无关 device-independent | | | |
+| 6 `hwh_map.py` | 已测 | 已测 | 2025.1 / 2026.1 | 标准库，Python ≥3.5 |
+| 7 `check_vivado_reports.py` | 已测 | 已测 | 2017.4 / 2025.1 / 2026.1 | 标准库 |
+| 1 `compare_golden.py` | 与器件无关 | 已测 | — | numpy |
+| 3 AXI DMA 驱动踩坑 | 未上板；寄存器偏移相同（PG021），按 `.hwh` 换基地址即可 | 已测 | — | numpy |
+| 4 DRM 显示模式 | 不适用（无 DPSUB） | 已测 | — | 标准库 |
+| 2、5、8 | 与器件无关 | | | |
 
-Versal 和纯 FPGA（无 PS）没有样例，未测。Versal and PS-less FPGAs have no samples and are untested.
+Versal 和纯 FPGA（无 PS）没有样例，未测。
 
-## 目录 Index
+## 目录
 
-| # | 类型 Type | 内容 Content |
+| # | 类型 | 内容 |
 |---|---|---|
 | 1 | 案例模板 + 校验脚本 | 定点 CNN：参考模型导出 → RTL 逐位比对 |
 | 2 | 踩坑清单 | 必须做综合后网表仿真的情形 |
@@ -106,4 +106,4 @@ Versal 和纯 FPGA（无 PS）没有样例，未测。Versal and PS-less FPGAs h
 
 ## 8. 提示词工作流
 
-见 `prompts/README.md`：软硬件划分、根据报告定位瓶颈、板上故障先复现再修改、评估前数据泄漏自查。
+见 [`prompts/README.md`](prompts/README.md)：软硬件划分、根据报告定位瓶颈、板上故障先复现再修改、评估前数据泄漏自查。

@@ -1,5 +1,7 @@
 # 02 MIPI lane1 无数据：从寄存器假设到定位单根断线
 
+中文 | [English](02_mipi_lane1_fault_location_en.md)
+
 会话：OV9281 → FZ3B 的 CSI-2 2-lane 接收，lane1 始终收不到完整一行　日期：2026-10-29～30
 
 ## 提示词（整理）

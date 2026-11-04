@@ -197,11 +197,10 @@ class Node:
         self.ov.show([float(v) for v in np.where(cal, T, 0.0)], [bool(v) for v in cal], [bool(v) for v in alarm],
                      [float(v) for v in dT],
                      dict(step=self.step, dt=dt, qcnn_ms=1e3 * (t2 - t1), pre_ms=1e3 * (t1 - t0),
-                          mqtt=self.mqtt.connected, demo=self.a.demo, clock=time.strftime("%H:%M:%S"),
+                          mqtt=self.mqtt.connected, clock=time.strftime("%H:%M:%S"),
                           topic="fsf/%s/state" % self.a.node, sent=st["sent"], queued=len(self.mqtt._q)))
         t3 = time.time()
         msg = {"step": self.step, "t": round(t_cap, 3), "dt": round(dt, 3), "sensors": SENSORS,
-               "demo": bool(self.a.demo),
                "dT": [round(float(v), 4) for v in dT],
                "T": [round(float(v), 3) if c else None for v, c in zip(T, cal)],
                "alarm": [bool(v) for v in alarm],
@@ -230,7 +229,7 @@ class Node:
         self.step += 1
         topic = "fsf/%s/" % self.a.node
         fiber = {k: st.get(k) for k in ("ready", "score", "threshold", "alarm", "cnn", "corr", "t_alarm")}
-        msg = {"step": self.step, "t": round(t_cap, 3), "sensors": SENSORS, "demo": False,
+        msg = {"step": self.step, "t": round(t_cap, 3), "sensors": SENSORS,
                "fiber": fiber, "T": [None] * 9, "dT": [0.0] * 9, "alarm": [False] * 9,
                "ms": {"pre": round(1e3 * (t1 - t0), 1), "qcnn": round(1e3 * (t2 - t1), 2)},
                "mqtt": dict(self.mqtt.stats)}
@@ -272,7 +271,6 @@ def main():
     ap.add_argument("--ui-dir", default="ui", help="bg.bin + layout.json from tools/ui/build_ui.py")
     ap.add_argument("--bg-phys", type=lambda v: int(v, 0), default=0x72000000,
                     help="reserved DDR for the 1.5 MB background (inside the camera's no-map region)")
-    ap.add_argument("--demo", action="store_true", help="show DEMO WEIGHTS on screen (untrained model)")
     ap.add_argument("--broker", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=1883)
     ap.add_argument("--period", type=float, default=1.0, help="pair interval, s (spec: 1..10)")

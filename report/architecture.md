@@ -1,15 +1,17 @@
-# 系统架构 System architecture
+# 系统架构
+
+中文 | [English](architecture_en.md)
 
 图片在 `report/figures/`，与设计报告（`report/design_report.pdf`）第二部分的图一致。
 
-## 1. 系统组成 System overview
+## 1. 系统组成
 
 ![系统组成](figures/system_overview.png)
 
 一根多模光纤绕在液冷管路上，光纤出射的散斑图样由 OV9281 相机采集，送入 EdgeBoard FZ3B（Zynq UltraScale+ ZU3EG）。
 板上完成采集、预处理、QCNN 推理、窗口融合报警、屏幕显示和 MQTT 上报，上位机只负责接收和展示。
 
-## 2. 软硬件划分与数据流 HW/SW partition and data flow
+## 2. 软硬件划分与数据流
 
 ![数据流](figures/data_flow.png)
 
@@ -23,17 +25,17 @@
 
 PS 与推理核之间用 AXI DMA（PG021 simple mode）传输，驱动在 `src/host/qcnn_dma.py`，不依赖 PYNQ。地址分配见 `board/fz3b/prebuilt/address_map.txt`。
 
-## 3. 硬件连接 Hardware setup
+## 3. 硬件连接
 
 ![硬件连接](figures/hardware_setup.png)
 
 测温实验台的 9 路加热和接触式测温只用于产生升温和提供参考温度，不参与板上推理。
 
-## 4. 相机采集链 Camera capture chain (PL)
+## 4. 相机采集链（PL）
 
 ![采集链](figures/capture_chain.png)
 
-## 5. QCNN 推理核 Inference core (PL)
+## 5. QCNN 推理核（PL）
 
 ![QCNN 结构](figures/qcnn_structure.png)
 
@@ -41,14 +43,14 @@ PS 与推理核之间用 AXI DMA（PG021 simple mode）传输，驱动在 `src/h
 
 ![卷积层数据通路](figures/conv_datapath.png)
 
-## 6. 报警方法 Alarm method
+## 6. 报警方法
 
 ![报警方法](figures/alarm_method.png)
 
 QCNN 温升估计与两窗口块相关的 1 − 相关系数，按不加热对照数据标准化后以 1 : 0.1 加权，连续 3 次超过门限报警。
 训练与评估见 `src/model/win_alarm/README.md`，参数在 `data/fusion/fusion.json`。
 
-## 7. 节点程序流程 Node software flow (PS)
+## 7. 节点程序流程（PS）
 
 ![节点程序流程](figures/node_flow.png)
 

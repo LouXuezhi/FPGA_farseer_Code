@@ -1,5 +1,7 @@
 # 01 软硬件划分：模型纠正"MQTT 放 PL、DP 接 PL"的设想
 
+中文 | [English](01_hw_sw_partition_mqtt_dp_en.md)
+
 会话：三层架构（MQTT 消息、CNN 推理、Mini DP 着色显示）方案与实现　日期：2026-11-01
 
 ## 提示词（整理）

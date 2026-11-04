@@ -601,10 +601,6 @@ class UI:
             self.tx.draw(im, (x, 18), s, "cjk", 11, C["dm"], mid=True)
             G.dot(d, x - 7, 18, 3, C["ok"] if ok else C["al"])
             x -= 22
-        if m is not None and m.get("demo"):
-            w = self.tx.size("DEMO 权重", "cjk", 10)[0]
-            G.rrect(d, (x - w - 12, 10, x, 26), 3, C["bg"], C["ac"])
-            self.tx.draw(im, (x - w - 6, 18), "DEMO 权重", "cjk", 10, C["ac"], mid=True)
 
     def nav(self, im, d, snap):
         d.rectangle((0, NAV, G.W, G.H), fill=C["bg"])
@@ -1272,7 +1268,7 @@ def simulate(state, seconds, period=2.0, seed=3):
         fiber = {"ready": t - t0 > 180, "score": round(score, 3), "threshold": 3.26, "alarm": bool(x > 0.9),
                  "cnn": None, "corr": None, "t_alarm": None}
         m = {"step": i + 1, "t": t, "dt": period, "dT": [float(v) for v in dT], "T": [float(v) for v in T],
-             "alarm": [bool(v) for v in alarm], "demo": False, "ms": {"pre": 2017.0, "qcnn": 1.34, "ovl": 0.3},
+             "alarm": [bool(v) for v in alarm], "ms": {"pre": 2017.0, "qcnn": 1.34, "ovl": 0.3},
              "fiber": fiber,
              "mqtt": {"sent": sent, "dropped": 0, "reconnects": 0},
              "ui": {"mqtt": True, "t_alarm": 48.0, "rate_alarm": 3.0, "node": "fz3b"}}

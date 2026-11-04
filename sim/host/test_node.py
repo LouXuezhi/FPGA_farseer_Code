@@ -246,7 +246,7 @@ def test_node(qmodel_path):
     b = Broker()
     sub = []
     args = sn.argparse.Namespace(node="t", in_h=56, q_scale=32.0, q_zero=128.0, dt_lsb=1.0 / 1024,
-                                 t_alarm=48.0, rate_alarm=3.0, demo=True)
+                                 t_alarm=48.0, rate_alarm=3.0)
     mq = m.MqttClient("t", "127.0.0.1", b.port, log=lambda s: None).start()
     mq.subscribe("fsf/t/cmd/#")
     wait(lambda: mq.connected)

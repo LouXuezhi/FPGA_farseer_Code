@@ -10,7 +10,7 @@
   Blender -b -P pipe_model.py -- --out DIR [--mode real|heat] [--heat values.json]
                                    [--segs 32] [--samples 128] [--no-render]
   --mode heat 时按管段数值着色（values.json: {"values": [...], "vmin":..., "vmax":...}），
-  不给文件则用演示数据。
+  不给文件则用示例数据。
 """
 import argparse
 import json
@@ -515,7 +515,7 @@ def main():
     suffix = ""
     heat = None
     if args.mode == "heat":
-        spec = json.load(open(args.heat)) if args.heat else {   # 演示：22→27 °C 沿程升温，阀 6-7 间强热点、阀 3-4 间弱热点
+        spec = json.load(open(args.heat)) if args.heat else {   # 示例：22→27 °C 沿程升温，阀 6-7 间强热点、阀 3-4 间弱热点
             "inlet": 22.0, "outlet": 27.0,
             "hotspots": [{"valve": 6.5, "dT": 8.0, "sigma": 0.17}, {"valve": 3.5, "dT": 2.5, "sigma": 0.10}]}
         T = temp_profile(spec, xs)

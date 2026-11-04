@@ -129,7 +129,7 @@ class Screen:
 
     def show(self, temps, valid, alarms, dT, info):
         """temps/valid/alarms/dT: 9 each, dT order. info: dict with optional keys
-        step, dt, qcnn_ms, pre_ms, mqtt (bool), demo (bool), clock (str)."""
+        step, dt, qcnn_ms, pre_ms, mqtt (bool), clock (str)."""
         sx = self.lay["sensor_x"]
         for i, v in enumerate(profile(temps, valid, sx)):
             self.regs.write(PROF0 + 4 * i, v)
@@ -149,7 +149,7 @@ class Screen:
                 self.put(f["alarm"], "▲", L.ALARM, blink=True)
             else:
                 self.put(f["alarm"], "●", L.OK if valid[k] else L.DIM)
-        self.put(L.FIELDS["badge"], "DEMO WEIGHTS" if info.get("demo") else "", L.WARN)
+        self.put(L.FIELDS["badge"], "", L.WARN)
         self.put(L.FIELDS["status"], "● MQTT", L.OK if info.get("mqtt") else L.ALARM)
         self.put(L.FIELDS["clock"], info.get("clock", ""), L.WHITE)
         self.put(L.FIELDS["mqtt"], "%s  sent %d  q%d" % (info.get("topic", ""), info.get("sent", 0),

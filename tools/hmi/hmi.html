@@ -51,7 +51,6 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:6px 8px;b
   <span class="pill"><span id="d_mqtt" class="dot"></span><span id="t_mqtt">MQTT</span></span>
   <span class="pill"><span id="d_node" class="dot"></span><span id="t_node">节点</span></span>
   <span class="pill"><span id="d_ref" class="dot"></span><span id="t_ref">参考温度</span></span>
-  <span id="demo" class="badge" style="display:none">DEMO 权重：推理核未训练</span>
   <span class="spacer"></span>
   <span class="mono" id="clock" style="color:var(--dim)"></span>
 </header>
@@ -110,7 +109,6 @@ async function tick() {
       "节点 " + (S.status === "online" ? (fresh ? "在线" : "在线 · 无数据 " + fmt(S.state_age, 0) + "s") : S.status === "offline" ? "离线" : "未知"), "t_node");
   dot("d_ref", S.ref && S.ref_age < 5 ? "ok" : "bad", S.ref && S.ref_age < 5 ? "参考温度 在线" : (S.ref_err || "参考温度 无"), "t_ref");
   const st = S.state || {};
-  document.getElementById("demo").style.display = st.demo === false ? "none" : (S.state ? "" : "none");
   document.getElementById("k_step").textContent = st.step ?? "—";
   document.getElementById("k_step_s").textContent = S.state ? "最近 " + fmt(S.state_age, 1) + " s 前" : "等待节点";
   document.getElementById("k_dt").textContent = st.dt != null ? fmt(st.dt, 2) + " s" : "—";

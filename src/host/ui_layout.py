@@ -69,7 +69,7 @@ def glyph_index(code):
 
 # dynamic text fields: name -> (col, row, width)
 FIELDS = {
-    "badge":   (33, 0, 13),               # DEMO WEIGHTS
+    "badge":   (33, 0, 13),               # reserved status text (blank)
     "status":  (47, 0, 11),               # ● MQTT
     "clock":   (58, 0, 8),                # 23:59:59
     "info":    (1, INFO_ROW, 40),         # #1234  dt 1.00s  QCNN 0.57ms  pre 312ms

@@ -1,5 +1,7 @@
 # 04 "时序全部收敛"的假象：约束没有生效
 
+中文 | [English](04_timing_constraints_not_applied_en.md)
+
 会话：相机 + QCNN + DP 叠加层合并工程的 Vivado 构建　日期：2026-11-01～02
 
 ## 提示词（整理）

@@ -1,5 +1,7 @@
 # 08 PL 接管 Mini DP 后黑屏：live 输入的同步极性
 
+中文 | [English](08_dp_live_sync_polarity_en.md)
+
 会话：PL 合成的 800×480 界面经 ZynqMP DP 控制器 live 输入输出到 7 寸屏　日期：2026-11-02
 
 ## 提示词（整理）

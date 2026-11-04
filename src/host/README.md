@@ -25,7 +25,7 @@ MQTT 主题（前缀 `fsf/<node>/`）：
 | 主题 | QoS | 内容 |
 |---|---|---|
 | `status` | 1，retain | `online`；遗嘱 `offline` |
-| `state` | 0，每步 | `step t dt sensors dT T alarm ms{pre,qcnn,ovl} mqtt demo` |
+| `state` | 0，每步 | `step t dt sensors dT T alarm ms{pre,qcnn,ovl} mqtt` |
 | `alarm` | 1，变化时 | `t alarm T` |
 | `cmd/calibrate` | 订阅 | `{"T": [9 个温度]}` 设定绝对温度 |
 
@@ -39,7 +39,7 @@ python3 -E speckle_node.py --source raw --backend dma --address-map address_map.
 python speckle_node.py --source fake --backend zero --ui-dir ../../board/fz3b/ui --broker 127.0.0.1 --steps 20
 ```
 
-`--win-fusion`：按 `data/fusion/fusion.json` 做窗口融合报警（`win_fusion.py`）。`--demo` 只在推理核载入未训练的测试模型时使用，会在屏幕和 MQTT 上标出，正常运行不加。
+`--win-fusion`：按 `data/fusion/fusion.json` 做窗口融合报警（`win_fusion.py`）。
 
 ## PS 屏幕界面
 

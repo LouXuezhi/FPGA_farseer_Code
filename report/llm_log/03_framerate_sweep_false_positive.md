@@ -1,5 +1,7 @@
 # 03 帧率扫描的假阳性：行数完整不等于画面有效
 
+中文 | [English](03_framerate_sweep_false_positive_en.md)
+
 会话：lane0 单独出图后提高采集帧率　日期：2026-10-30
 
 ## 提示词（整理）

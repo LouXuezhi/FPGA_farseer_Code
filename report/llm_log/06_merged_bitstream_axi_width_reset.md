@@ -1,5 +1,7 @@
 # 06 合并比特流上板：AXI 位宽与复位极性两处仿真测不出的错误
 
+中文 | [English](06_merged_bitstream_axi_width_reset_en.md)
+
 会话：在 Linux 运行时通过 FPGA manager 加载合并比特流　日期：2026-11-02
 
 ## 提示词（整理）
