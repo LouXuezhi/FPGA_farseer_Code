@@ -1,121 +1,104 @@
 # fiber_speckle_thermo
 
-基于 FPGA 的单光纤沿线温升实时报警边缘终端。
+**基于 FPGA 的多模光纤沿线温升实时报警终端**
+**FPGA edge terminal for real-time temperature-rise alarms along a multimode fiber**
 
-一根多模光纤 + 一台相机 + 一块 FPGA 开发板：光纤沿线出现异常温升时报警，在板上完成采集、推理、判断、显示和 MQTT 上报。
+一根多模光纤绕在液冷管路上，相机采集光纤出射的散斑，EdgeBoard FZ3B 在板上完成采集、QCNN 推理、报警判断、屏幕显示和 MQTT 上报。
+A multimode fiber is wound along a liquid-cooling pipe. A camera captures the output speckle, and an EdgeBoard FZ3B does capture, QCNN inference, alarm decision, display and MQTT reporting on the board.
 
-- 赛事：2026 全国大学生嵌入式芯片与系统设计竞赛 · FPGA 赛道 · AMD 自主选题赛道（初级组）
-- 板卡：EdgeBoard FZ3B，Zynq UltraScale+ ZU3EG（`xczu3eg-sfvc784-1-i`），4 GB DDR4
-- 相机：OV9281 全局快门，MIPI CSI-2 1-lane，RAW8 640×800
-- 工具：Vivado 2026.1；板上 Linux 4.14（xilinx-v2018.3），Python 3.6.9，numpy 1.13.3
-- 开源协议：MIT（`LICENSE`）
+| | |
+|---|---|
+| 赛道 Track | 2026 全国大学生嵌入式芯片与系统设计竞赛 · AMD 自主选题（初级组） / 2026 NUEDC Embedded Chip & System Design, AMD open topic (junior) |
+| 板卡 Board | EdgeBoard FZ3B, Zynq UltraScale+ ZU3EG `xczu3eg-sfvc784-1-i` |
+| 相机 Camera | OV9281, MIPI CSI-2 1-lane, RAW8 640×800 |
+| 工具 Tools | Vivado 2026.1; board Linux 4.14, Python 3.6.9, numpy 1.13.3 |
+| 协议 License | MIT |
 
-## 系统组成
+![系统组成 System overview](report/figures/system_overview.png)
 
-![系统组成](report/figures/system_overview.png)
+## 成果 Results
 
-系统架构图、数据流图、软硬件划分和各模块框图见 [`report/architecture.md`](report/architecture.md)。
+### 报警效果：与其他方法同协议对比 Alarm performance vs. other methods (same protocol)
 
-```
-多模光纤出射散斑
-   │
-OV9281 ─CSI-2─► PL: D-PHY 接收 → CSI-2 解析 → VDMA ─► DDR 帧存 ×4
-                                                    │
-         PS: 帧采集 → 预处理（平场 + 标准化 → 2×56² uint8）
-                    │ AXI DMA
-                    ▼
-         PL: QCNN 推理核（参考帧 + 当前帧 → 9 路 ΔT）
-                    │ AXI DMA
-                    ▼
-         PS: ΔT 累加 + 校准 → 温度、阈值/速率告警
-                    ├─► 屏幕界面（800×480，Mini DP）
-                    └─► MQTT（status / state / alarm，cmd/calibrate 远程校准）
-```
+第三次采集 11 段数据，5 折留出；门限只用训练折的不加热对照数据确定。检出率在 1% 误报下统计，针对 2 min 内单路升温 ≥1 °C 的窗口。
+11 recorded sessions, 5-fold hold-out; thresholds set from training-fold no-heat controls only. Detection rate at 1 % false alarms, for windows with ≥1 °C rise on one channel within 2 min.
 
-| 部分 | 实现 | 位置 |
-|---|---|---|
-| 相机采集 | 自写 RTL：D-PHY 接收、CSI-2 解析、寄存器 | `src/rtl/cam/` |
-| QCNN 推理核 | 自写 RTL：4 层 3×3 s2 卷积 + GAP + 2 层 FC，12 bit 定点，层内按输出通道并行、层间按帧流水 | `src/rtl/qcnn/` |
-| DMA 帧链路 | 自写 RTL：AXI-Stream ↔ 推理核 | `src/rtl/link/` |
-| PL 屏幕合成 | 自写 RTL：背景 + 沿程着色 + 相机直读 + 字符层 | `src/rtl/video/` |
-| 节点服务 | Python：采集、预处理、60 s 窗口、DMA 调度、窗口融合报警、MQTT | `src/host/speckle_node.py`、`src/host/win_fusion.py` |
-| PS 屏幕界面 | Python：多页界面、3D 管路实时着色、散斑预处理视图、显示防抖 | `src/host/fsf_ps_ui.py` |
-| 训练与定点模型 | PyTorch 训练、量化、整数参考模型、RTL 参数导出；报警方法的训练与评估 | `src/model/`、`src/model/win_alarm/` |
+| 方法 Method | AUC | 检出率 Detection | 事件 Events | 延迟中位 Median delay | 计算量 MMAC | 能上 PL 实时 Real-time on PL |
+|---|---|---|---|---|---|---|
+| **本设计 This work**（QCNN + 窗口去相关 window decorrelation） | **0.993** | **92%** | **30/30** | **25 s** | **2.6** | **是 Yes** |
+| ResNet-18 微调 fine-tuned | 0.994 | 95% | 30/30 | 63 s | 712 | 否 No |
+| MobileNetV3-S 微调 fine-tuned | 0.992 | 94% | 30/30 | 33 s | 22 | 否 No |
+| 窗口均方差 Window MSE | 0.986 | 86% | 30/30 | 25 s | — | — |
+| 逐帧相关 Frame correlation | 0.816 | 30% | 24/30 | 213 s | — | — |
+| ResNet-18 特征距离 feature distance | 0.817 | 15% | 25/30 | 125 s | 3628 | 否 No |
+| ViT-B/16 特征距离 feature distance | 0.777 | 9% | 14/30 | 205 s | 35126 | 否 No |
 
-## 主要指标
+检出率与微调大模型相当；延迟是 ResNet-18 的 2/5，计算量是它的 1/270、MobileNetV3-S 的 1/8，且只有本设计能在 PL 上实时运行。
+Detection is on par with fine-tuned large models; delay is 2/5 of ResNet-18's, compute is 1/270 of ResNet-18 and 1/8 of MobileNetV3-S, and only this design runs in real time on the PL.
 
-| 指标 | 数值 | 条件 | 来源 |
+### 板上推理 On-board inference
+
+| 实现 Implementation | 单帧 Per frame | 本设计快 Speed-up | 单次能耗 Energy |
 |---|---|---|---|
-| 温升报警 | ≥1 °C/2 min 检出 92%（1% 误报），30/30 次升温事件报警，延迟中位 25 s | 第三次采集 11 段，5 折留出 | `src/model/win_alarm/` |
-| 推理核吞吐 | 565 µs/帧（首帧 1117 µs） | 100 MHz，2×56² → 9，训练权重 | RTL 仿真，`sim/results/tb_qcnn_core.log` |
-| 推理核与定点模型一致性 | 144/144 逐位一致（16 组实测窗口 × 9 输出）；板上 40/40 | 同上 | RTL 仿真；板上实测 |
-| 板上 DMA 推理调用 | p50 1.34 ms，max 1.48 ms（每次换一组输入） | 40 次 | 板上实测 |
-| 板上预处理 | p50 2017 ms | PS 单核 numpy | 板上实测 |
-| 步长 | p50 2.02 s | 采集 + 预处理 + 推理 + 上报 | 板上实测 |
-| 时序 | clk_pl_0 100 MHz WNS +2.545 ns，WHS +0.005 ns；vclk WNS +8.263 ns | 布线后 | `build/vivado/reports/` |
-| PL 资源 | LUT 20322（28.8%），FF 20041（14.2%），BRAM 53.5（24.8%），DSP 108（30.0%） | 合并比特流 | 同上 |
-| 片上功耗 | 2.99 W | Vivado 估计 | 同上 |
-| 显示 | 800×480 @ 60 Hz | Mini DP，7 英寸屏 | 板上实测 |
+| **PL 推理核 PL core（本设计 this work）** | **1.33 ms**（含 DMA 调用 incl. DMA call） | — | **0.29 mJ** |
+| 同一 QCNN 在 A53 上（定点） Same QCNN on A53, fixed-point | 33.5 ms | 25× | — |
+| 现成网络在 A53 上 Off-the-shelf nets on A53 | 96～2668 ms | 70～2000× | — |
+| 台式机 GPU 跑 MNet-reg Desktop GPU, MNet-reg | — | — | 48 mJ |
 
-推理核载入的是训练好的权重（`data/fusion/qmodel_win.npz`），`src/rtl/gen/` 与 `board/fz3b/prebuilt/` 都由它生成。
-报警参数在 `data/fusion/fusion.json`；换光路后按 `src/model/win_alarm/README.md` 录一段不加热数据重新标定门限。
+### 推理核优化 Inference-core optimization（XC7Z020，同一模型 same model）
 
-## 复现
+| 实现 Implementation | 单帧 Per frame | DSP | BRAM_18K | 能否布局 Fits |
+|---|---|---|---|---|
+| 串行（优化前） Serial (before) | 18.06 ms | 7 | — | 能 Yes |
+| **并行 + 层间流水（本设计） Parallel + pipelined (this work)** | **0.565 ms** | 104 / 220 | **60 / 280** | **能 Yes** |
+| hls4ml，复用因子 576 reuse 576 | 5.36 ms | 106 / 220 | 603 / 280 | 超出 No |
+| hls4ml，复用因子 64 reuse 64 | 2.70 ms | 915 / 220 | 1080 / 280 | 超出 No |
 
-### 1. 环境
+比串行快 32 倍；hls4ml 生成的实现 BRAM 超出器件 2～4 倍，无法布局。
+32× faster than serial; hls4ml output needs 2–4× the device's BRAM and cannot be placed.
 
-```bash
-conda env create -f environment.yml && conda activate speckle     # 训练、导出、仿真脚本
-./build/fetch_rtl_deps.sh                                         # 开源 RTL（verilog-axis，固定提交）
-```
+### 硬件指标 Hardware metrics（FZ3B 合并比特流 combined bitstream）
 
-仿真用 Verilator（≥ 5.0，无 Vivado 时）或 Vivado 2026.1 自带的 xsim。
+| 指标 Metric | 数值 Value | 来源 Source |
+|---|---|---|
+| 推理核 Core throughput | 565 µs/帧 frame @100 MHz | `sim/results/tb_qcnn_core.log` |
+| 与定点模型一致 Bit-exact vs. fixed-point model | 仿真 sim 144/144，板上 board 40/40 | 同上 / board log |
+| 时序 Timing | WNS +2.545 ns，WHS +0.005 ns | `build/vivado/reports/` |
+| 资源 Resources | LUT 28.8%，FF 14.2%，BRAM 24.8%，DSP 30.0% | 同上 |
+| 片上功耗 On-chip power | 2.99 W（Vivado 估计 estimate） | 同上 |
+| 相机采集 Capture | 640×800 @149.8 fps；320×400 @299.0 fps | 板上实测 board |
+| 显示 Display | 800×480 @60 Hz，Mini DP | 板上实测 board |
 
-### 2. 仿真（不需要板卡）
-
-```bash
-./sim/rtl/run_verilator.sh tb_qcnn_core                    # 推理核（训练权重）：144/144 与定点模型逐位一致
-./sim/rtl/run_verilator.sh tb_axis_frame_link              # DMA 帧链路，随机反压
-python -I tools/ui/build_ui.py --cam data/cam_frame_640x800.npy
-EXTRA_MEM=build/ui ./sim/rtl/run_verilator.sh tb_video_overlay   # PL 屏幕合成，逐像素对参考模型
-python -I sim/host/test_node.py                            # MQTT、DMA 驱动、屏幕寄存器、节点主循环、窗口融合报警
-python -I sim/host/test_ui_filter.py                       # PS 界面显示防抖
-```
-
-预期输出与说明见 `sim/README.md`。
-
-### 3. 构建比特流
+## 复现 Reproduce
 
 ```bash
-FSF_CAM=1 FSF_VIDEO=1 vivado -mode batch -source build/vivado/build_fz3b.tcl
+conda env create -f environment.yml && conda activate speckle
+./build/fetch_rtl_deps.sh                                   # 开源 RTL open-source RTL (verilog-axis, pinned)
+
+./sim/rtl/run_verilator.sh tb_qcnn_core                     # 推理核 core: 144/144 bit-exact
+./sim/rtl/run_verilator.sh tb_axis_frame_link               # DMA 链路 link: 72/72
+python -I sim/host/test_node.py                             # 板端软件 board software: ALL PASS
+./skill/tests/run_tests.sh                                  # 技能包脚本 skill scripts: ALL PASS
+
+FSF_CAM=1 FSF_VIDEO=1 vivado -mode batch -source build/vivado/build_fz3b.tcl   # 比特流 bitstream
 ```
 
-产物与报告见 `build/README.md`；本仓库已带一份构建结果（`board/fz3b/prebuilt/`，带 sha256）。
+上板步骤见 `board/fz3b/README.md`；仓库已带一份构建结果 `board/fz3b/prebuilt/`（带 sha256）。
+Board bring-up: `board/fz3b/README.md`. A prebuilt bitstream with sha256 is in `board/fz3b/prebuilt/`.
 
-### 4. 上板
+## 目录 Layout
 
-见 `board/fz3b/README.md`：加载比特流、启动相机服务、启动节点服务和屏幕界面、接 MQTT。
+按 AMD 选题指南 3.3.5.4 推荐结构。Follows the AMD guide §3.3.5.4 layout.
 
-## 目录
+| 目录 Dir | 内容 Content |
+|---|---|
+| `src/` | RTL（相机采集、QCNN 推理核、DMA 链路、屏幕合成）、PS 侧 Python、训练与定点模型 / RTL, PS-side Python, training & fixed-point model |
+| `sim/` | testbench、板端软件测试与结果日志 / testbenches, host tests, result logs |
+| `build/` | 构建脚本与综合实现报告 / build scripts and implementation reports |
+| `board/` | 上板说明、预编译比特流、实测输出 / bring-up, prebuilt bitstream, board output |
+| `data/` | 训练好的模型、报警参数、测试数据 / trained model, alarm parameters, test data |
+| `skill/` | 技能包：踩坑清单、通用校验脚本、提示词模板 / skills: pitfalls, generic check scripts, prompt templates |
+| `report/` | 设计报告、架构说明与图、大模型协作记录 / design report, architecture, LLM log |
+| `tools/` | 界面素材生成、上位机监视页 / UI asset generation, host monitor page |
 
-与赛事指南 3.3.5.4 推荐结构一致，目录名和文件名均为小写英文。
-
-```
-fiber_speckle_thermo/
-├── README.md          项目简介 + 复现步骤（本文件）
-├── LICENSE            MIT
-├── environment.yml    训练与仿真环境
-├── src/               设计源码
-│   ├── rtl/           Verilog：qcnn（推理核）、link（DMA 帧链路）、cam（相机采集）、video（屏幕合成）、gen（导出的权重与参数）
-│   ├── host/          PS 侧 Python：节点服务、DMA 驱动、MQTT、屏幕界面
-│   └── model/         训练、量化、定点参考模型、RTL 导出
-├── sim/               仿真与验证：rtl/（testbench 与运行脚本）、host/（板端软件测试）
-├── build/             构建脚本 + 综合与实现报告
-├── board/fz3b/        上板说明、预编译比特流、界面素材、相机服务、实测输出
-├── tools/             界面素材生成（ui/）、上位机 MQTT 监视页（hmi/）
-├── data/              测试数据与参考：定点模型、散斑样帧、公开数据集下载脚本
-├── skill/             技能包：踩坑清单、校验脚本（scripts/）、提示词工作流（prompts/），换题目换板卡可用
-└── report/            设计报告、系统架构说明（architecture.md）与架构图（figures/）、大模型协作记录（llm_log/）
-```
-
-各目录下有 `README.md` 说明文件作用和用法。
+架构说明 Architecture: [`report/architecture.md`](report/architecture.md)。各目录下有 `README.md`。Each directory has a `README.md`.

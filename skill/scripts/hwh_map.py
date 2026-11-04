@@ -61,8 +61,9 @@ def main():
     a = ap.parse_args()
 
     info, regs, modules = parse(a.hwh)
-    print("# %s %s%s%s" % (info.get("NAME", "?"), info.get("DEVICE", "?"), info.get("PACKAGE", ""),
-                            info.get("SPEEDGRADE", "")))
+    dev = info.get("DEVICE", "?")
+    dev = dev if dev.startswith("x") else "xc" + dev               # 7-series .hwh writes "7z020"
+    print("# %s %s-%s%s" % (info.get("NAME", "?"), dev, info.get("PACKAGE", ""), info.get("SPEEDGRADE", "")))
     print("%-24s %-28s %-12s %-10s" % ("instance", "type", "base", "size"))
     for r in regs:
         print("%-24s %-28s 0x%08X  0x%X" % (r["instance"], r["type"], r["base"], r["size"]))
